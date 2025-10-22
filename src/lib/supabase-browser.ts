@@ -12,7 +12,8 @@ let supabase: SupabaseClient | undefined;
  * This function ensures the client is created only when first needed,
  * avoiding issues during server-side prerendering.
  */
-export const getSupabase = () => {
+// ✅ CORRECTION: Explicitly set the return type to SupabaseClient
+export const getSupabase = (): SupabaseClient => {
   if (!supabase) {
     supabase = createClientComponentClient();
   }

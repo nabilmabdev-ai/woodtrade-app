@@ -1,0 +1,454 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// --- CORE & USER MODELS ---
+
+model User {
+  id        String      @id @default(cuid())
+  email     String      @unique
+  name      String?
+  role      Role        @default(CASHIER)
+  createdAt DateTime    @default(now())
+  // relations
+  orders    CustomerOrder[]
+  openedSessions CashRegisterSession[] @relation("OpenedByUser")
+  closedSessions CashRegisterSession[] @relation("ClosedByUser")
+  cashMovements  CashMovement[]
+  returnsProcessed ReturnOrder[]
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  MANAGER
+  CASHIER
+  WAREHOUSE
+  ACCOUNTANT
+}
+
+
+// --- CUSTOMER BILLING ---
+
+model Company {
+  id        String      @id @default(cuid())
+  name      String
+  vat       String?
+  category  String?
+  // relations
+  contacts  Contact[]
+  orders    CustomerOrder[]
+  payments  Payment[]
+  creditNotes CreditNote[]
+}
+
+model Contact {
+  id        String      @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String?
+  phone     String?
+  // relations
+  company   Company     @relation(fields: [companyId], references: [id])
+  companyId String
+  orders    CustomerOrder[]
+}
+
+model CustomerOrder {
+  id          String       @id @default(cuid())
+  status      String       @default("PENDING") // PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELED, RETURNED
+  subtotal    Float
+  discount    Float        @default(0)
+  grandTotal  Float
+  createdAt   DateTime     @default(now())
+  // relations
+  company     Company      @relation(fields: [companyId], references: [id])
+  companyId   String
+  contact     Contact      @relation(fields: [contactId], references: [id])
+  contactId   String
+  user        User         @relation(fields: [userId], references: [id])
+  userId      String
+  lines       OrderLine[]
+  invoices    Invoice[]
+  return      ReturnOrder?
+}
+
+model OrderLine {
+  id              String          @id @default(cuid())
+  order           CustomerOrder   @relation(fields: [orderId], references: [id])
+  orderId         String
+  productVariant  ProductVariant  @relation(fields: [productVariantId], references: [id])
+  productVariantId String
+  quantity        Float
+  unitPrice       Float
+  discount        Float           @default(0)
+  totalPrice      Float
+}
+
+model Invoice {
+  id                  String                @id @default(cuid())
+  order               CustomerOrder         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId             String                @unique
+  status              InvoiceStatus         @default(UNPAID)
+  subtotal            Float
+  discount            Float                 @default(0)
+  total               Float
+  issueDate           DateTime              @default(now())
+  dueDate             DateTime
+  // relations
+  payments            Payment[]
+  refunds             Refund[]
+  paymentAllocations  PaymentAllocation[]
+  creditNoteAllocations CreditNoteAllocation[]
+}
+
+enum InvoiceStatus {
+  DRAFT
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  VOID
+  REFUNDED
+}
+
+model Payment {
+  id                    String                @id @default(uuid()) @db.Uuid
+  invoiceId             String? 
+  company               Company               @relation(fields: [companyId], references: [id])
+  companyId             String
+  amount                Float
+  paymentDate           DateTime              @default(now())
+  method                String 
+  status                PaymentStatus         @default(AVAILABLE)
+  // relations
+  invoice               Invoice?              @relation(fields: [invoiceId], references: [id])
+  allocations           PaymentAllocation[]
+  cashRegisterSession   CashRegisterSession?  @relation(fields: [cashRegisterSessionId], references: [id])
+  cashRegisterSessionId String?
+}
+
+model PaymentAllocation {
+  id              String  @id @default(cuid())
+  payment         Payment @relation(fields: [paymentId], references: [id])
+  paymentId       String  @db.Uuid
+  invoice         Invoice @relation(fields: [invoiceId], references: [id])
+  invoiceId       String
+  amountAllocated Float
+
+  @@unique([paymentId, invoiceId])
+}
+
+enum PaymentStatus {
+  AVAILABLE
+  PARTIALLY_ALLOCATED
+  FULLY_ALLOCATED
+}
+
+model CreditNote {
+  id                  String                 @id @default(cuid())
+  company             Company                @relation(fields: [companyId], references: [id])
+  companyId           String
+  status              CreditNoteStatus       @default(AVAILABLE)
+  initialAmount       Float
+  remainingAmount     Float
+  reason              String
+  createdAt           DateTime               @default(now())
+  expiresAt           DateTime?
+  // relations
+  fromReturn          ReturnOrder?           @relation(fields: [fromReturnId], references: [id])
+  fromReturnId        String?                @unique
+  allocations         CreditNoteAllocation[]
+}
+
+model CreditNoteAllocation {
+  id              String      @id @default(cuid())
+  creditNote      CreditNote  @relation(fields: [creditNoteId], references: [id])
+  creditNoteId    String
+  invoice         Invoice     @relation(fields: [invoiceId], references: [id])
+  invoiceId       String
+  amountAllocated Float
+
+  @@unique([creditNoteId, invoiceId])
+}
+
+enum CreditNoteStatus {
+  AVAILABLE
+  PARTIALLY_USED
+  FULLY_USED
+  EXPIRED
+}
+
+
+// --- PRODUCT & INVENTORY ---
+
+model Product {
+  id          String      @id @default(cuid())
+  sku         String      @unique
+  name        String
+  description String?
+  family      String?
+  collection  String?
+  // relations
+  variants    ProductVariant[]
+}
+
+model ProductVariant {
+  id          String      @id @default(cuid())
+  product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId   String
+  unit        String 
+  length      Float?
+  width       Float?
+  thickness   Float?
+  // relations
+  prices      Price[]
+  inventories Inventory[]
+  orderLines  OrderLine[]
+  returnLines ReturnOrderLine[]
+  supplierInvoiceLines SupplierInvoiceLine[]
+}
+
+model Price {
+  id              String          @id @default(cuid())
+  productVariant  ProductVariant  @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+  productVariantId String
+  price           Float
+  priceType       String          @default("retail") 
+  currency        String          @default("EUR")
+}
+
+model Inventory {
+  id              String          @id @default(cuid())
+  productVariant  ProductVariant  @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+  productVariantId String
+  lotNumber       String?
+  quantity        Float
+  location        String?
+  // relations
+  movements       InventoryMovement[]
+}
+
+model InventoryMovement {
+  id          String    @id @default(cuid())
+  inventory   Inventory @relation(fields: [inventoryId], references: [id])
+  inventoryId String
+  type        String 
+  quantity    Float
+  reason      String?
+  createdAt   DateTime  @default(now())
+}
+
+
+// --- RETURNS & REFUNDS ---
+
+model ReturnOrder {
+  id                String      @id @default(cuid())
+  reason            String?
+  totalRefund       Float
+  createdAt         DateTime    @default(now())
+  // relations
+  originalOrder     CustomerOrder @relation(fields: [originalOrderId], references: [id])
+  originalOrderId   String      @unique
+  processedByUser   User        @relation(fields: [processedByUserId], references: [id])
+  processedByUserId String
+  lines             ReturnOrderLine[]
+  refunds           Refund[]
+  creditNote        CreditNote?
+}
+
+model ReturnOrderLine {
+  id                String          @id @default(cuid())
+  returnOrder       ReturnOrder     @relation(fields: [returnOrderId], references: [id])
+  returnOrderId     String
+  productVariant    ProductVariant  @relation(fields: [productVariantId], references: [id])
+  productVariantId  String
+  quantity          Float
+  unitPrice         Float
+  totalPrice        Float
+}
+
+model Refund {
+  id                    String      @id @default(cuid())
+  amount                Float
+  refundDate            DateTime    @default(now())
+  method                String
+  // relations
+  invoice               Invoice     @relation(fields: [invoiceId], references: [id])
+  invoiceId             String
+  returnOrder           ReturnOrder @relation(fields: [returnOrderId], references: [id])
+  returnOrderId         String
+  cashRegisterSession   CashRegisterSession? @relation(fields: [cashRegisterSessionId], references: [id])
+  cashRegisterSessionId String?
+}
+
+
+// --- CASH REGISTER (POS) ---
+
+// ✅ NOUVEAU: Enum pour distinguer les types de caisses.
+enum CashRegisterType {
+  SALES   // Pour les ventes POS, gérées par sessions
+  EXPENSE // Pour les dépenses, gestion continue
+}
+
+model CashRegister {
+  id        String      @id @default(cuid())
+  name      String      @unique
+  location  String?
+  // ✅ MODIFIÉ: Ajout du champ type avec une valeur par défaut.
+  type      CashRegisterType @default(SALES)
+  // relations
+  sessions  CashRegisterSession[]
+  // ✅ NOUVEAU: Relation pour les mouvements directs (caisses de dépenses).
+  cashMovements CashMovement[]
+}
+
+model CashRegisterSession {
+  id              String      @id @default(cuid())
+  status          CashRegisterSessionStatus @default(OPEN)
+  openingBalance  Float
+  closingBalance  Float?
+  expectedBalance Float?
+  difference      Float?
+  openedAt        DateTime    @default(now())
+  closedAt        DateTime?
+  // relations
+  cashRegister    CashRegister @relation(fields: [cashRegisterId], references: [id])
+  cashRegisterId  String
+  openedByUser    User         @relation("OpenedByUser", fields: [openedByUserId], references: [id])
+  openedByUserId  String
+  closedByUser    User?        @relation("ClosedByUser", fields: [closedByUserId], references: [id])
+  closedByUserId  String?
+  payments        Payment[]
+  refunds         Refund[]
+  cashMovements   CashMovement[]
+}
+
+enum CashRegisterSessionStatus {
+  OPEN
+  CLOSED
+}
+
+model CashMovement {
+  id        String            @id @default(cuid())
+  amount    Float
+  type      CashMovementType
+  reason    String
+  createdAt DateTime          @default(now())
+  // relations
+  
+  // ✅ MODIFIÉ: Un mouvement peut être lié à une session (ventes) OU directement à une caisse (dépenses).
+  // La logique applicative doit s'assurer qu'au moins l'un des deux est présent.
+  session         CashRegisterSession? @relation(fields: [sessionId], references: [id])
+  sessionId       String?
+  
+  cashRegister    CashRegister?        @relation(fields: [cashRegisterId], references: [id])
+  cashRegisterId  String?
+
+  user      User              @relation(fields: [userId], references: [id])
+  userId    String
+}
+
+enum CashMovementType {
+  PAY_IN
+  PAY_OUT
+  WITHDRAWAL
+  TRANSFER_IN
+  TRANSFER_OUT
+}
+
+// --- SUPPLIER BILLING ---
+
+model Supplier {
+  id        String      @id @default(cuid())
+  name      String      @unique
+  vat       String?
+  category  String?
+  // relations
+  contacts  SupplierContact[]
+  invoices  SupplierInvoice[]
+  payments  SupplierPayment[]
+}
+
+model SupplierContact {
+  id          String    @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String?
+  phone       String?
+  // relations
+  supplier    Supplier  @relation(fields: [supplierId], references: [id])
+  supplierId  String
+}
+
+model SupplierInvoice {
+  id            String                    @id @default(cuid())
+  supplier      Supplier                  @relation(fields: [supplierId], references: [id])
+  supplierId    String
+  invoiceNumber String?
+  status        SupplierInvoiceStatus     @default(UNPAID)
+  subtotal      Float
+  total         Float
+  invoiceDate   DateTime
+  dueDate       DateTime
+  // relations
+  allocations   SupplierPaymentAllocation[]
+  lines         SupplierInvoiceLine[]
+}
+
+model SupplierInvoiceLine {
+  id               String          @id @default(cuid())
+  invoice          SupplierInvoice @relation(fields: [invoiceId], references: [id])
+  invoiceId        String
+  productVariant   ProductVariant  @relation(fields: [productVariantId], references: [id])
+  productVariantId String
+  quantity         Float
+  unitPrice        Float
+  totalPrice       Float
+  receivedQuantity Float           @default(0)
+}
+
+enum SupplierInvoiceStatus {
+  DRAFT
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  VOID
+}
+
+model SupplierPayment {
+  id          String                    @id @default(uuid()) @db.Uuid
+  supplier    Supplier                  @relation(fields: [supplierId], references: [id])
+  supplierId  String
+  amount      Float
+  paymentDate DateTime                  @default(now())
+  method      String
+  status      SupplierPaymentStatus     @default(AVAILABLE)
+  // relations
+  allocations SupplierPaymentAllocation[]
+}
+
+model SupplierPaymentAllocation {
+  id              String          @id @default(cuid())
+  payment         SupplierPayment @relation(fields: [paymentId], references: [id])
+  paymentId       String          @db.Uuid
+  invoice         SupplierInvoice @relation(fields: [invoiceId], references: [id])
+  invoiceId       String
+  amountAllocated Float
+
+  @@unique([paymentId, invoiceId])
+}
+
+enum SupplierPaymentStatus {
+  AVAILABLE
+  PARTIALLY_ALLOCATED
+  FULLY_ALLOCATED
+}

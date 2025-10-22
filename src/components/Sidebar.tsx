@@ -1,0 +1,170 @@
+// src/components/Sidebar.tsx
+"use client";
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import {
+  LayoutDashboard,
+  Box,
+  ShoppingCart,
+  Warehouse,
+  FileText,
+  UserCog,
+  Wallet,
+  Undo2,
+  LineChart,
+  Truck,
+  Building,
+  ArrowRightLeft,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronDown,
+  ChevronUp,
+  Store,
+  GanttChartSquare,
+  ClipboardCheck,
+  ClipboardList,
+  // ✅ NOUVEAU : Ajout de l'icône pour les clients
+  Users,
+} from 'lucide-react';
+
+interface NavLink {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+}
+
+interface NavSection {
+  title?: string;
+  icon: React.ElementType;
+  href?: string;
+  label: string;
+  subLinks?: NavLink[];
+}
+
+const navSections: NavSection[] = [
+  { href: '/', label: 'Tableau de bord', icon: LayoutDashboard },
+  { href: '/pos', label: 'Point de Vente (POS)', icon: Store },
+  {
+    label: 'Ventes', icon: ShoppingCart,
+    subLinks: [
+      // ✅ NOUVEAU : Ajout du lien vers la page des clients
+      { href: '/customers', label: 'Clients', icon: Users },
+      { href: '/sales/orders', label: 'Commandes', icon: ShoppingCart },
+      { href: '/billing/invoices', label: 'Factures', icon: FileText },
+      { href: '/billing/payments', label: 'Paiements', icon: Wallet },
+      { href: '/returns', label: 'Retours / Avoirs', icon: Undo2 },
+      { href: '/billing/reconciliation', label: 'Rapprochement Paiements', icon: ClipboardCheck },
+    ],
+  },
+  {
+    label: 'Achats', icon: Truck,
+    subLinks: [
+      { href: '/suppliers', label: 'Fournisseurs', icon: Building },
+      { href: '/purchasing/invoices', label: 'Factures d\'achat', icon: FileText },
+      { href: '/purchasing/payments', label: 'Paiements Fournisseurs', icon: ArrowRightLeft },
+      { href: '/purchasing/reconciliation', label: 'Rapprochement Paiements', icon: ClipboardCheck },
+    ],
+  },
+  {
+    label: 'Produits & Inventaire', icon: Box,
+    subLinks: [
+      { href: '/products', label: 'Produits', icon: Box },
+      { href: '/inventory', label: 'Inventaire', icon: Warehouse },
+    ],
+  },
+  {
+    label: 'Gestion de Caisse', icon: Wallet,
+    subLinks: [
+      { href: '/cash-registers', label: 'Gérer les Caisses', icon: Wallet },
+      { href: '/cash-registers/history', label: 'Historique des Sessions', icon: LineChart },
+    ],
+  },
+  {
+    label: 'Rapports', icon: LineChart,
+    subLinks: [
+      { href: '/reports/sales', label: 'Rapports de Ventes', icon: LineChart },
+      { href: '/pos-reports/cash-statement', label: 'Rapports de Session (Ventes)', icon: LineChart },
+      { href: '/pos-reports/expense-statement', label: 'Relevé de Dépenses', icon: ClipboardList },
+      { href: '/reports/purchasing-forecast', label: 'Prévisionnel d\'Achats', icon: GanttChartSquare },
+    ],
+  },
+  {
+    label: 'Administration', icon: UserCog,
+    subLinks: [
+      { href: '/users', label: 'Utilisateurs & Rôles', icon: UserCog },
+    ],
+  },
+];
+
+
+export default function Sidebar() {
+  const pathname = usePathname();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ 'Ventes': true, 'Achats': true });
+
+  const toggleSection = (label: string) => {
+    setOpenSections(prev => ({ ...prev, [label]: !prev[label] }));
+  };
+
+  // Le reste du composant (le JSX) reste inchangé
+  return (
+    <aside className={`flex-shrink-0 bg-gray-800 text-white flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
+      <div className={`h-16 flex items-center border-b border-gray-700 ${isCollapsed ? 'justify-center' : 'justify-center'}`}>
+        <Truck className={`w-8 h-8 text-blue-400 transition-transform duration-300 ${isCollapsed ? 'transform scale-110' : 'mr-2'}`} />
+        {!isCollapsed && ( <span className="text-2xl font-bold">WoodTrade</span> )}
+      </div>
+      
+      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+        {navSections.map((section) => (
+          <div key={section.label}>
+            {section.subLinks ? (
+              <>
+                <button 
+                  onClick={() => toggleSection(section.label)} 
+                  className={`group w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors ${isCollapsed ? 'justify-center' : ''} ${section.subLinks.some(link => pathname.startsWith(link.href)) ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <section.icon className="h-5 w-5" />
+                    {!isCollapsed && <span>{section.label}</span>}
+                  </div>
+                  {!isCollapsed && ( openSections[section.label] ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" /> )}
+                  {isCollapsed && ( <span className="absolute left-full ml-4 w-auto p-2 min-w-max rounded-md shadow-md text-white bg-gray-900 text-xs font-bold transition-all duration-100 scale-0 group-hover:scale-100 origin-left">{section.label}</span> )}
+                </button>
+                {(!isCollapsed && openSections[section.label]) && (
+                  <div className="pl-6 pt-1 pb-1 space-y-1">
+                    {section.subLinks.map((link) => {
+                      const isActive = pathname === link.href;
+                      return (
+                        <Link key={link.href} href={link.href} className={`group flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm ${isActive ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
+                          <link.icon className="h-4 w-4" />
+                          <span>{link.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            ) : (
+              <Link 
+                href={section.href!} 
+                className={`group relative flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors ${pathname === section.href ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'} ${isCollapsed ? 'justify-center' : ''}`}
+              >
+                <section.icon className="h-5 w-5" />
+                {!isCollapsed && <span>{section.label}</span>}
+                {isCollapsed && ( <span className="absolute left-full ml-4 w-auto p-2 min-w-max rounded-md shadow-md text-white bg-gray-900 text-xs font-bold transition-all duration-100 scale-0 group-hover:scale-100 origin-left">{section.label}</span> )}
+              </Link>
+            )}
+          </div>
+        ))}
+      </nav>
+      
+      <div className="p-2 border-t border-gray-700">
+        <button onClick={() => setIsCollapsed(!isCollapsed)} className="w-full flex items-center justify-center p-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white">
+          {isCollapsed ? <ChevronsRight className="h-6 w-6" /> : <ChevronsLeft className="h-6 w-6" />}
+        </button>
+      </div>
+    </aside>
+  );
+}

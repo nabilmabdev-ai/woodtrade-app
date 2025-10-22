@@ -4,19 +4,34 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-// ✅ CORRECTION: Use a more generic type to match the output of the create function
-let supabase: SupabaseClient<any> | undefined;
+// ✅ CORRECTION: Define a minimal placeholder type for the database schema.
+// This avoids using 'any' and satisfies the ESLint rule.
+export type Database = {
+  public: {
+    Tables: {
+      // You can expand this later with your actual tables if you want full type safety
+    };
+    Enums: {
+      // You can expand this with your actual enums
+    };
+    Functions: {
+      // You can expand this with your actual functions
+    };
+  };
+};
+
+// Use the new Database type for the singleton instance.
+let supabase: SupabaseClient<Database> | undefined;
 
 /**
  * Gets the singleton instance of the Supabase browser client.
  * This function ensures the client is created only when first needed,
  * avoiding issues during server-side prerendering.
  */
-// ✅ CORRECTION: Explicitly set the return type to the same generic SupabaseClient
-export const getSupabase = (): SupabaseClient<any> => {
+export const getSupabase = (): SupabaseClient<Database> => {
   if (!supabase) {
-    // The function returns a generic client, so our types must match.
-    supabase = createClientComponentClient();
+    // Pass the Database type as a generic to the client creation function.
+    supabase = createClientComponentClient<Database>();
   }
   return supabase;
 };

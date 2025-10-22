@@ -3,7 +3,7 @@
 
 import { Fragment } from 'react';
 import { useRouter } from 'next/navigation';
-import { getSupabase } from '@/lib/supabase-browser'; // ✅ CORRECTION: Import getSupabase function
+import { getSupabase } from '@/lib/supabase-browser';
 import { useAuth } from '@/hooks/use-auth';
 import { Menu, Transition } from '@headlessui/react';
 import { Search, Bell, UserCircle, LogOut } from 'lucide-react';
@@ -12,7 +12,6 @@ export default function Header() {
   const router = useRouter();
   const { user } = useAuth();
   
-  // ✅ CORRECTION: Get the Supabase client instance by calling the function
   const supabase = getSupabase();
 
   const handleSignOut = async () => {
@@ -20,7 +19,6 @@ export default function Header() {
     if (error) {
       console.error('Erreur lors de la déconnexion:', error);
     } else {
-      // Use router.replace for a cleaner navigation flow after logout
       router.replace('/login');
     }
   };
@@ -89,4 +87,4 @@ export default function Header() {
       </div>
     </header>
   );
-}```
+}

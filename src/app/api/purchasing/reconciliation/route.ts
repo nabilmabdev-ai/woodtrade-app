@@ -12,7 +12,9 @@ interface ReconciliationPayload {
 /**
  * Gère la requête POST pour rapprocher un paiement fournisseur
  * avec une ou plusieurs factures.
- * CORRECTIF : Les calculs monétaires sont effectués en centimes pour éviter les erreurs de précision.
+ *
+ * ✅ ROBUSTESSE APPLIQUÉE : Tous les calculs monétaires sont effectués en centimes pour
+ * garantir la précision et éviter les erreurs de virgule flottante.
  */
 export async function POST(request: Request) {
   try {
@@ -24,13 +26,12 @@ export async function POST(request: Request) {
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Récupérer le paiement et calculer son solde disponible en centimes
+      // 1. Récupérer le paiement et calculer son solde disponible en centimes.
       const payment = await tx.supplierPayment.findUniqueOrThrow({
         where: { id: paymentId },
         include: { allocations: true },
       });
 
-      // Convertir en centimes pour des calculs précis
       const paymentAmountInCents = Math.round(payment.amount * 100);
       const totalAllocatedInCents = payment.allocations.reduce((sum, alloc) => sum + Math.round(alloc.amountAllocated * 100), 0);
       let remainingPaymentInCents = paymentAmountInCents - totalAllocatedInCents;
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
         throw new Error("Ce paiement est déjà entièrement utilisé.");
       }
 
-      // 2. Récupérer les factures à payer, triées par date d'échéance
+      // 2. Récupérer les factures à payer, triées par date d'échéance.
       const invoicesToSettle = await tx.supplierInvoice.findMany({
         where: {
           id: { in: invoiceIds },
@@ -51,9 +52,9 @@ export async function POST(request: Request) {
 
       let totalAllocatedInThisRunInCents = 0;
 
-      // 3. Boucler sur chaque facture et allouer le paiement en utilisant des entiers (centimes)
+      // 3. Boucler sur chaque facture et allouer le paiement en utilisant des entiers (centimes).
       for (const invoice of invoicesToSettle) {
-        if (remainingPaymentInCents <= 0) break; // Arrêter si le paiement est épuisé
+        if (remainingPaymentInCents <= 0) break; // Arrêter si le paiement est épuisé.
 
         const invoiceTotalInCents = Math.round(invoice.total * 100);
         const invoiceAllocatedInCents = invoice.allocations.reduce((sum, alloc) => sum + Math.round(alloc.amountAllocated * 100), 0);
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
         const amountToAllocateInCents = Math.min(remainingPaymentInCents, invoiceRemainingDueInCents);
 
         if (amountToAllocateInCents > 0) {
-          // Créer l'enregistrement d'allocation (reconvertir en décimal pour la BDD)
+          // Créer l'enregistrement d'allocation (stocker la valeur décimale).
           await tx.supplierPaymentAllocation.create({
             data: {
               paymentId: paymentId,
@@ -70,40 +71,33 @@ export async function POST(request: Request) {
               amountAllocated: amountToAllocateInCents / 100,
             },
           });
-
-          // Mettre à jour le statut de la facture
-          const newTotalAllocatedToInvoiceInCents = invoiceAllocatedInCents + amountToAllocateInCents;
-          let newInvoiceStatus: SupplierInvoiceStatus = invoice.status;
-          
-          if (invoiceTotalInCents - newTotalAllocatedToInvoiceInCents === 0) {
-            newInvoiceStatus = SupplierInvoiceStatus.PAID;
-          } else {
-            newInvoiceStatus = SupplierInvoiceStatus.PARTIALLY_PAID;
-          }
-
-          await tx.supplierInvoice.update({
-            where: { id: invoice.id },
-            data: { status: newInvoiceStatus },
-          });
           
           remainingPaymentInCents -= amountToAllocateInCents;
           totalAllocatedInThisRunInCents += amountToAllocateInCents;
         }
       }
 
-      // 4. Mettre à jour le statut du paiement source après toutes les allocations
-      // On se base sur les données fraîches de la transaction pour le calcul final
-      const finalPaymentAllocations = await tx.supplierPaymentAllocation.aggregate({
-        where: { paymentId: payment.id },
-        _sum: { amountAllocated: true },
-      });
-      const finalTotalAllocated = finalPaymentAllocations._sum.amountAllocated || 0;
-      const finalTotalAllocatedInCents = Math.round(finalTotalAllocated * 100);
+      // 4. Mettre à jour le statut de toutes les factures modifiées après la boucle.
+      // C'est plus efficace que de le faire dans la boucle.
+      for (const invoice of invoicesToSettle) {
+          const updatedInvoice = await tx.supplierInvoice.findUniqueOrThrow({ 
+              where: { id: invoice.id },
+              include: { allocations: true }
+          });
+          const newTotalAllocatedToInvoiceCents = updatedInvoice.allocations.reduce((s, a) => s + Math.round(a.amountAllocated * 100), 0);
+          
+          if (Math.round(updatedInvoice.total * 100) - newTotalAllocatedToInvoiceCents === 0) {
+              await tx.supplierInvoice.update({ where: { id: invoice.id }, data: { status: SupplierInvoiceStatus.PAID }});
+          } else if (newTotalAllocatedToInvoiceCents > 0) {
+              await tx.supplierInvoice.update({ where: { id: invoice.id }, data: { status: SupplierInvoiceStatus.PARTIALLY_PAID }});
+          }
+      }
 
+      // 5. Mettre à jour le statut du paiement source à la fin.
       let newPaymentStatus: SupplierPaymentStatus;
-      if (paymentAmountInCents - finalTotalAllocatedInCents === 0) {
+      if (remainingPaymentInCents === 0) {
         newPaymentStatus = SupplierPaymentStatus.FULLY_ALLOCATED;
-      } else if (finalTotalAllocatedInCents > 0) {
+      } else if (remainingPaymentInCents < paymentAmountInCents) {
         newPaymentStatus = SupplierPaymentStatus.PARTIALLY_ALLOCATED;
       } else {
         newPaymentStatus = SupplierPaymentStatus.AVAILABLE;
@@ -114,13 +108,14 @@ export async function POST(request: Request) {
         data: { status: newPaymentStatus },
       });
 
+      // Retourner le montant total alloué dans cette opération (en décimal).
       return { totalAllocated: totalAllocatedInThisRunInCents / 100 };
     });
 
     return NextResponse.json(result, { status: 200 });
 
   } catch (error) {
-    console.error("Erreur lors du rapprochement des paiements:", error);
+    console.error("Erreur lors du rapprochement des paiements fournisseurs:", error);
     const errorMessage = error instanceof Error ? error.message : "Impossible de traiter la requête.";
     return new NextResponse(
       JSON.stringify({ error: errorMessage }),

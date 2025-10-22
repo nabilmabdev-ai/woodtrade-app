@@ -10,21 +10,16 @@ interface OrderLineData {
 
 /**
  * Gère la requête GET pour récupérer toutes les commandes.
+ * (Cette fonction reste inchangée).
  */
 export async function GET() {
   try {
     const orders = await prisma.customerOrder.findMany({
       include: {
-        company: {
-          select: {
-            name: true,
-          },
-        },
+        company: { select: { name: true } },
         lines: true,
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: { createdAt: 'desc' },
     });
     return NextResponse.json(orders);
   } catch (error) {
@@ -39,6 +34,10 @@ export async function GET() {
 
 /**
  * Gère la requête POST pour créer une nouvelle commande.
+ *
+ * ✅ CORRECTION DE LOGIQUE FINANCIÈRE :
+ * Calcule et sauvegarde correctement les champs `subtotal`, `grandTotal` pour la commande,
+ * et le `totalPrice` pour chaque ligne de commande.
  */
 export async function POST(request: Request) {
   try {
@@ -52,29 +51,30 @@ export async function POST(request: Request) {
       );
     }
 
-    // --- Calcul des totaux (CORRIGÉ) ---
+    // --- ✅ CALCULS CORRIGÉS ---
     const subtotal = lines.reduce((acc: number, line: OrderLineData) => {
       return acc + line.quantity * line.unitPrice;
     }, 0);
-    // Pour cette route simple, il n'y a pas de remise, donc grandTotal est égal à subtotal.
+    
+    // Pour cette route, il n'y a pas de remise globale, donc grandTotal = subtotal.
     const grandTotal = subtotal;
 
-    // --- Création de la commande (CORRIGÉ) ---
+    // --- ✅ CRÉATION DE COMMANDE CORRIGÉE ---
     const newOrder = await prisma.customerOrder.create({
       data: {
         companyId,
         contactId,
         userId,
-        subtotal,   // Utilise 'subtotal'
-        grandTotal, // Utilise 'grandTotal'
-        // 'discount' a une valeur par défaut de 0 dans le schéma, donc pas besoin de le spécifier
+        subtotal,   // Utilise la valeur calculée
+        grandTotal, // Utilise la valeur calculée
         status: 'PENDING',
         lines: {
           create: lines.map((line: OrderLineData) => ({
             productVariantId: line.productVariantId,
             quantity: line.quantity,
             unitPrice: line.unitPrice,
-            totalPrice: line.quantity * line.unitPrice,
+            // Le total de la ligne est également calculé et sauvegardé
+            totalPrice: line.quantity * line.unitPrice, 
           })),
         },
       },

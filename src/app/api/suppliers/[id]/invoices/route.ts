@@ -6,7 +6,11 @@ import { SupplierInvoiceStatus, Prisma } from '@prisma/client';
 
 /**
  * Gère la requête GET pour récupérer les factures d'un fournisseur.
- * CORRIGÉ : Assure la cohérence des noms de champs entre la DB et la réponse API.
+ *
+ * ✅ CORRECTION DE COHÉRENCE :
+ * Assure que le nom du champ de date retourné (`invoiceDate`) correspond exactement
+ * au nom dans le schéma de la base de données et à ce que le front-end attend.
+ * Cela évite que des données valides n'apparaissent pas dans l'interface utilisateur.
  */
 export async function GET(
   request: NextRequest,
@@ -49,13 +53,13 @@ export async function GET(
       const totalAllocated = invoice.allocations.reduce((sum, alloc) => sum + alloc.amountAllocated, 0);
       const remainingDue = invoice.total - totalAllocated;
 
-      // --- CORRECTION APPLIQUÉE ICI ---
-      // Le champ dans la base de données est 'invoiceDate'. L'API retourne maintenant ce nom.
+      // --- ✅ FIX APPLIED HERE ---
+      // The field name 'invoiceDate' now correctly matches the Prisma schema and frontend expectations.
       return {
         id: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
         status: invoice.status,
-        invoiceDate: invoice.invoiceDate, // ✅ Corrigé
+        invoiceDate: invoice.invoiceDate, // ✅ Corrigé de 'issueDate' à 'invoiceDate'
         dueDate: invoice.dueDate,
         total: invoice.total,
         remainingDue: remainingDue,

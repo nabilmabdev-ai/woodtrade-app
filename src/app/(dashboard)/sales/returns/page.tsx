@@ -46,7 +46,7 @@ interface ActiveSession {
 type ReturnOutcomeOption = 'REFUND_CASH' | 'REFUND_CARD' | 'CREATE_CREDIT_NOTE';
 
 // --- ✅ FIX APPLIED HERE ---
-// Define the specific roles allowed for cash refunds to resolve the type error.
+// Define the allowed roles using the imported 'Role' enum to ensure type safety.
 const ALLOWED_ROLES_FOR_CASH_REFUND: Role[] = [
     Role.CASHIER,
     Role.ADMIN,
@@ -153,8 +153,7 @@ export default function ReturnsPage() {
 
   const totalRefundAmount = returnCart.reduce((acc, item) => acc + item.returnQuantity * item.unitPrice, 0);
 
-  // --- ✅ FIX APPLIED HERE ---
-  // Use the predefined constant for the role check to ensure type safety.
+  // This comparison is now type-safe.
   const canRefundCash = user?.role && ALLOWED_ROLES_FOR_CASH_REFUND.includes(user.role);
 
   const handleProcessReturn = async () => {

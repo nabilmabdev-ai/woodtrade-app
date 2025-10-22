@@ -1,7 +1,9 @@
 // src/app/(dashboard)/suppliers/SupplierList.tsx
 
 import Link from 'next/link';
-import { ChevronRight, Building } from 'lucide-react'; // <-- CORRECTED LINE
+// --- ✅ CORRECTION APPLIQUÉE ICI ---
+// L'icône correcte est 'Building', et non 'Building2'.
+import { ChevronRight, Building } from 'lucide-react';
 
 interface Contact {
   id: string;
@@ -58,6 +60,7 @@ export default function SupplierList({ suppliers }: SupplierListProps) {
                 <tr>
                     <td colSpan={4} className="px-6 py-10 text-center text-sm text-gray-500">
                         <div className="flex flex-col items-center">
+                            {/* The component now correctly references the imported 'Building' icon */}
                             <Building className="w-12 h-12 text-gray-300 mb-2" />
                             <h3 className="text-lg font-medium text-gray-800">Aucun fournisseur trouvé</h3>
                             <p className="mt-1">Commencez par ajouter un nouveau fournisseur.</p>

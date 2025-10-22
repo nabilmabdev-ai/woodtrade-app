@@ -3,6 +3,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+/**
+ * Gère la requête GET pour récupérer les détails complets d'une facture spécifique.
+ *
+ * ✅ CORRECTION APPLIQUÉE :
+ * La requête inclut maintenant explicitement `creditNoteAllocations` en plus des `paymentAllocations`.
+ * Cela garantit que le solde de la facture est calculé correctement côté client,
+ * en tenant compte de tous les types de paiements (directs et via avoirs).
+ */
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -27,7 +35,18 @@ export async function GET(
             },
           },
         },
-        payments: true,
+        // On récupère les deux types d'allocations pour un calcul de solde complet.
+        paymentAllocations: {
+            include: {
+                payment: true // Inclure les détails du paiement pour l'affichage
+            }
+        },
+        // --- ✅ FIX APPLIED HERE ---
+        creditNoteAllocations: {
+            include: {
+                creditNote: true // Inclure les détails de l'avoir pour l'affichage
+            }
+        },
       },
     });
 
@@ -35,6 +54,8 @@ export async function GET(
       return new NextResponse(JSON.stringify({ error: 'Facture non trouvée' }), { status: 404 });
     }
 
+    // Le calcul du solde restant est fait côté client (dans InvoiceDetailPage),
+    // mais maintenant il a toutes les données nécessaires pour le faire correctement.
     return NextResponse.json(invoice);
 
   } catch (error) {

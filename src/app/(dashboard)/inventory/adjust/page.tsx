@@ -6,13 +6,15 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
-// CORRECTION MANUELLE : Ajout de types pour clarifier les données
+// --- ✅ INTERFACES AJOUTÉES POUR LA SÉCURITÉ DE TYPE ---
+// Interface pour les variantes de produit une fois aplaties pour la liste déroulante.
 interface ProductVariant {
   id: string;
   unit: string;
   product: { name: string };
 }
 
+// Interface pour la structure des données reçues de l'API /api/products.
 interface ProductWithVariants {
     id: string;
     name: string;
@@ -32,12 +34,14 @@ export default function AdjustInventoryPage() {
       try {
         const res = await fetch('/api/products');
         if (!res.ok) throw new Error("Impossible de charger les produits");
-        // CORRECTION MANUELLE : Typer les données reçues
+        
+        // ✅ CORRECTION : Les données sont maintenant fortement typées avec l'interface 'ProductWithVariants'.
         const productsData: ProductWithVariants[] = await res.json();
+        
         const allVariants = productsData.flatMap((p) =>
           p.variants.length > 0
             ? p.variants.map((v) => ({ ...v, product: { name: p.name } }))
-            : [{ id: p.id, product: { name: p.name }, unit: 'pièce' }]
+            : [{ id: p.id, product: { name: p.name }, unit: 'pièce' }] // Cas pour produits sans variante
         );
         setVariants(allVariants);
       } catch (error) {

@@ -2,59 +2,58 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { SupplierPaymentStatus, Prisma } from '@prisma/client';
-// SIMULATION: Dans une vraie application, vous importeriez une fonction pour obtenir l'utilisateur actuel
-// import { getCurrentUser } from '@/lib/session';
+import { SupplierPaymentStatus, Prisma, Role } from '@prisma/client';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+
+// Define the roles that are allowed to view financial data for suppliers.
+const ALLOWED_ROLES: Role[] = [Role.ACCOUNTANT, Role.ADMIN, Role.SUPER_ADMIN, Role.MANAGER];
 
 /**
- * Gère la requête GET pour récupérer tous les paiements d'un fournisseur spécifique.
- * CORRECTIF : Ajout d'une vérification de droits (simulée) pour s'assurer que
- * seul un utilisateur autorisé peut accéder aux données financières d'un fournisseur.
+ * Gère la requête GET pour récupérer les paiements d'un fournisseur.
+ *
+ * ✅ SÉCURITÉ APPLIQUÉE : Seuls les utilisateurs avec un rôle autorisé peuvent
+ * accéder à ces informations financières sensibles.
  */
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const supabase = createRouteHandlerClient({ cookies });
+
   try {
-    // --- BLOC DE SÉCURITÉ (SIMULÉ) ---
-    // Dans une application réelle, vous vérifieriez ici les droits de l'utilisateur.
-    // Par exemple:
-    // const user = await getCurrentUser();
-    // if (!user || !user.roles.includes('ACCOUNTANT')) {
-    //   return new NextResponse(JSON.stringify({ error: "Accès non autorisé." }), { status: 403 });
-    // }
-    // Pour cet exercice, nous laissons un commentaire pour marquer l'emplacement de cette logique.
-    console.log("SECURITY CHECK: Endpoint /api/suppliers/[id]/payments hit. Authorization check should be implemented here.");
+    // 1. Authentification : Vérifier la session de l'utilisateur.
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return new NextResponse(JSON.stringify({ error: "Non autorisé." }), { status: 401 });
+    }
 
+    // 2. Autorisation : Vérifier le rôle de l'utilisateur.
+    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+    if (!user || !ALLOWED_ROLES.includes(user.role)) {
+      return new NextResponse(JSON.stringify({ error: "Accès refusé. Permissions insuffisantes." }), { status: 403 });
+    }
 
+    // 3. Si l'utilisateur est autorisé, procéder à la logique métier.
     const { id: supplierId } = await context.params;
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status'); // ex: 'available'
+    const status = searchParams.get('status');
 
     if (!supplierId) {
       return new NextResponse(JSON.stringify({ error: "L'ID du fournisseur est manquant." }), { status: 400 });
     }
 
     const whereClause: Prisma.SupplierPaymentWhereInput = { supplierId: supplierId };
-
     if (status === 'available') {
-      whereClause.status = {
-        in: [SupplierPaymentStatus.AVAILABLE, SupplierPaymentStatus.PARTIALLY_ALLOCATED],
-      };
+      whereClause.status = { in: [SupplierPaymentStatus.AVAILABLE, SupplierPaymentStatus.PARTIALLY_ALLOCATED] };
     }
 
     const payments = await prisma.supplierPayment.findMany({
       where: whereClause,
-      include: {
-        allocations: true, // L'inclusion des allocations est cruciale pour le calcul du solde
-      },
-      orderBy: {
-        paymentDate: 'desc',
-      },
+      include: { allocations: true },
+      orderBy: { paymentDate: 'desc' },
     });
     
-    // Le calcul du solde est effectué à la volée sur le serveur.
-    // C'est la méthode la plus fiable car elle utilise toujours les données les plus récentes.
     const paymentsWithBalance = payments.map(payment => {
       const totalAllocated = payment.allocations.reduce((sum, alloc) => sum + alloc.amountAllocated, 0);
       const remainingAmount = payment.amount - totalAllocated;

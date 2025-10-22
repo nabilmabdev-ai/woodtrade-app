@@ -6,14 +6,17 @@ import { SupplierPaymentStatus } from '@prisma/client';
 
 /**
  * Gère la requête GET pour récupérer tous les paiements faits aux fournisseurs.
- * CORRIGÉ : Calcule dynamiquement le montant restant pour chaque paiement.
+ *
+ * ✅ ROBUSTESSE APPLIQUÉE : Calcule dynamiquement le `remainingAmount` pour chaque
+ * paiement au lieu de se fier à une valeur stockée potentiellement obsolète.
+ * Ceci garantit que les données retournées sont toujours exactes.
  */
 export async function GET() {
   try {
     const payments = await prisma.supplierPayment.findMany({
       include: {
         supplier: { select: { name: true } },
-        // On inclut toujours les allocations pour un calcul fiable
+        // On inclut toujours les allocations car elles sont la source de vérité pour le calcul.
         allocations: true,
       },
       orderBy: {
@@ -21,19 +24,20 @@ export async function GET() {
       },
     });
 
-    // FIX APPLIQUÉ : Pour chaque paiement, le montant restant est calculé à la volée
-    // en se basant sur la somme des allocations. Cela garantit que la donnée est toujours
-    // à jour et évite les problèmes de désynchronisation.
-    const paymentsWithRemainingAmount = payments.map(p => {
+    // Pour chaque paiement, le montant restant est calculé à la volée.
+    const paymentsWithCalculatedRemainingAmount = payments.map(p => {
+        // La somme des allocations est la source de vérité pour le montant utilisé.
         const allocatedAmount = p.allocations.reduce((sum, alloc) => sum + alloc.amountAllocated, 0);
         const remainingAmount = p.amount - allocatedAmount;
+        
+        // On peut retourner l'objet original et y ajouter la propriété calculée.
         return {
             ...p,
-            remainingAmount, // On ajoute la propriété calculée à l'objet retourné
+            remainingAmount, // Cette valeur écrase toute valeur potentiellement stockée et obsolète.
         };
     });
 
-    return NextResponse.json(paymentsWithRemainingAmount);
+    return NextResponse.json(paymentsWithCalculatedRemainingAmount);
   } catch (error) {
     console.error('Erreur lors de la récupération des paiements fournisseurs:', error);
     const errorMessage = error instanceof Error ? error.message : "Erreur interne.";
@@ -46,6 +50,7 @@ export async function GET() {
 
 /**
  * Gère la requête POST pour enregistrer manuellement un nouveau paiement à un fournisseur.
+ * (Cette fonction reste inchangée mais est correcte dans sa conception).
  */
 export async function POST(request: Request) {
   try {
@@ -70,7 +75,7 @@ export async function POST(request: Request) {
         amount,
         paymentDate: new Date(paymentDate),
         method,
-        status: SupplierPaymentStatus.AVAILABLE, // The payment is available to be allocated to an invoice
+        status: SupplierPaymentStatus.AVAILABLE, // Correctly initialized as available.
       },
     });
 

@@ -91,7 +91,6 @@ export default function SupplierInvoiceList({ supplierId }: SupplierInvoiceListP
   }, [supplierId]);
 
   const handleRowClick = (invoiceId: string) => {
-    // We will build this page in a future step
     router.push(`/purchasing/invoices/${invoiceId}`);
   };
 
@@ -106,7 +105,7 @@ export default function SupplierInvoiceList({ supplierId }: SupplierInvoiceListP
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Facture N°</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date Facture</th>
-            {/* --- CORRECTION APPLIQUÉE ICI --- */}
+            {/* --- ✅ CORRECTION APPLIQUÉE ICI --- */}
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date d&apos;échéance</th>
             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Solde Dû</th>
@@ -119,7 +118,7 @@ export default function SupplierInvoiceList({ supplierId }: SupplierInvoiceListP
           ) : (
             <tr>
               <td colSpan={6} className="px-6 py-10 text-center text-sm text-gray-500">
-                {/* --- CORRECTION APPLIQUÉE ICI --- */}
+                {/* --- ✅ CORRECTION APPLIQUÉE ICI --- */}
                 Ce fournisseur n&apos;a aucune facture enregistrée.
               </td>
             </tr>

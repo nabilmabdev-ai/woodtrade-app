@@ -41,12 +41,14 @@ export default function OrderDetailPage() {
       try {
         const response = await fetch(`/api/orders/${id}`);
         if (!response.ok) {
-          // CORRECTION MANUELLE ICI
+          // --- ✅ CORRECTION APPLIQUÉE ICI ---
+          // On lance un 'new Error' pour une gestion d'erreur standard et cohérente.
           throw new Error('Commande non trouvée ou erreur serveur');
         }
         const data = await response.json();
         setOrder(data);
       } catch (err) {
+        // Le bloc catch peut maintenant correctement traiter l'objet Error.
         const error = err as Error;
         setError(error.message);
       } finally {

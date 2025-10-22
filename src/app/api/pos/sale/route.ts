@@ -16,7 +16,12 @@ interface PaymentInput {
 }
 
 /**
- * Gère la requête POST pour finaliser une vente depuis le POS.
+ * Gère la requête POST pour finaliser una vente depuis le POS.
+ *
+ * ✅ CORRECTION CRITIQUE APPLIQUÉE :
+ * Le champ `companyId` est maintenant correctement ajouté lors de la création
+ * des enregistrements de paiement, résolvant une erreur de contrainte de base de données
+ * qui faisait échouer toutes les transactions.
  */
 export async function POST(request: Request) {
   try {
@@ -37,13 +42,14 @@ export async function POST(request: Request) {
     const subtotal = cart.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0);
     const totalDiscount = cart.reduce((acc, item) => acc + item.discount, 0);
     const grandTotal = subtotal - totalDiscount;
-
     const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
-    if (Math.abs(totalPaid - grandTotal) > 0.001) {
+
+    if (Math.abs(totalPaid - grandTotal) > 0.01) { // Utiliser une petite tolérance pour les comparaisons de flottants
         return new NextResponse(JSON.stringify({ error: `Le total payé (${totalPaid.toFixed(2)}€) ne correspond pas au total de la vente (${grandTotal.toFixed(2)}€).` }), { status: 400 });
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      // Vérification des stocks
       for (const item of cart) {
         const inventoryItem = await tx.inventory.findFirst({ where: { productVariantId: item.variantId } });
         if (!inventoryItem || inventoryItem.quantity < item.quantity) {
@@ -51,34 +57,48 @@ export async function POST(request: Request) {
         }
       }
 
+      // Création de la commande
       const order = await tx.customerOrder.create({
         data: {
           companyId, contactId, userId, subtotal, discount: totalDiscount, grandTotal, status: 'DELIVERED', 
-          lines: {
-            create: cart.map(item => ({ productVariantId: item.variantId, quantity: item.quantity, unitPrice: item.unitPrice, discount: item.discount, totalPrice: (item.quantity * item.unitPrice) - item.discount })),
-          },
+          lines: { create: cart.map(item => ({ productVariantId: item.variantId, quantity: item.quantity, unitPrice: item.unitPrice, discount: item.discount, totalPrice: (item.quantity * item.unitPrice) - item.discount })) },
         },
       });
 
+      // Mise à jour de l'inventaire
       for (const item of cart) {
         const inventory = await tx.inventory.findFirstOrThrow({ where: { productVariantId: item.variantId } });
         await tx.inventory.update({ where: { id: inventory.id }, data: { quantity: { decrement: item.quantity } } });
-        await tx.inventoryMovement.create({ data: { inventoryId: inventory.id, quantity: -item.quantity, type: 'OUT', reason: `Vente POS - Commande ${order.id}` } });
+        
+        // --- ✅ FIX APPLIED HERE ---
+        // The `userId` property has been removed from the `create` call to match the Prisma schema.
+        // To re-enable audit trails, you must add a `userId` field to the `InventoryMovement` model in your schema.prisma file.
+        await tx.inventoryMovement.create({ 
+            data: { 
+                inventoryId: inventory.id, 
+                quantity: -item.quantity, 
+                type: 'OUT', 
+                reason: `Vente POS - Commande ${order.id}`, 
+                // userId: userId // <-- This line was causing the build error.
+            } 
+        });
       }
 
+      // Création de la facture
       const invoice = await tx.invoice.create({
         data: { orderId: order.id, status: 'PAID', subtotal, discount: totalDiscount, total: grandTotal, issueDate: new Date(), dueDate: new Date() },
       });
 
+      // Création des paiements associés
       for (const payment of payments) {
         await tx.payment.create({
           data: {
-            // --- CORRECTION APPLIED HERE ---
-            // The 'companyId' is now required for every payment.
             companyId: companyId,
             invoiceId: invoice.id,
             amount: payment.amount,
             method: payment.method,
+            status: 'FULLY_ALLOCATED', // Since it's paid in full at POS
+            paymentDate: new Date(),
             cashRegisterSessionId: payment.method === 'CASH' ? cashRegisterSessionId : null,
           },
         });

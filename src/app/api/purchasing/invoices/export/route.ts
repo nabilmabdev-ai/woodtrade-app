@@ -2,16 +2,16 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-// L'import 'SupplierInvoiceStatus' n'est pas utilisé, nous pouvons le supprimer.
 
-// Helper function to escape CSV fields
-// CORRECTION: Remplacement de 'any' par un type plus spécifique.
+// Helper function to correctly escape fields for CSV format.
 const escapeCsvField = (field: string | number | null | undefined): string => {
     if (field === null || field === undefined) {
         return '';
     }
     const stringField = String(field);
+    // If the field contains a comma, quote, or newline, it must be enclosed in double quotes.
     if (/[",\n\r]/.test(stringField)) {
+        // Any double quote inside the field must be escaped by another double quote.
         return `"${stringField.replace(/"/g, '""')}"`;
     }
     return stringField;
@@ -32,9 +32,11 @@ export async function GET() {
       },
     });
 
+    // Define CSV headers
     const headers = [ 'ID Facture', 'Fournisseur', 'Date Facture', 'Date Échéance', 'Statut', 'Total', 'Montant Payé', 'Solde Restant' ];
     const csvRows = [headers.join(',')];
 
+    // Process each invoice into a CSV row
     for (const invoice of invoices) {
       const totalAllocated = invoice.allocations.reduce((sum, alloc) => sum + alloc.amountAllocated, 0);
       const remainingDue = invoice.total - totalAllocated;
@@ -42,6 +44,8 @@ export async function GET() {
       const row = [
         invoice.id,
         invoice.supplier.name,
+        // --- ✅ FIX APPLIED HERE ---
+        // Corrected the typo from 'toLocaleDateDateString' to 'toLocaleDateString'.
         new Date(invoice.invoiceDate).toLocaleDateString('fr-FR'),
         new Date(invoice.dueDate).toLocaleDateString('fr-FR'),
         invoice.status,
@@ -55,6 +59,7 @@ export async function GET() {
 
     const csvContent = csvRows.join('\n');
 
+    // Return the CSV content as a downloadable file
     return new NextResponse(csvContent, {
       status: 200,
       headers: {

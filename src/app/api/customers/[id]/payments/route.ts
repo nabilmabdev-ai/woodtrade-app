@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-// CORRECTION : Importer Prisma pour les types
+// ✅ CORRECTION : Importer Prisma et PaymentStatus pour les types
 import { PaymentStatus, Prisma } from '@prisma/client';
 
 /**
@@ -22,7 +22,7 @@ export async function GET(
       return new NextResponse(JSON.stringify({ error: "L'ID du client est manquant." }), { status: 400 });
     }
 
-    // CORRECTION : Utiliser 'const' et le type Prisma approprié
+    // ✅ CORRECTION : 'const' est utilisé et le type 'Prisma.PaymentWhereInput' est maintenant reconnu.
     const whereClause: Prisma.PaymentWhereInput = { companyId: companyId };
 
     // Si le paramètre 'status=available' est présent, on ne retourne que les paiements non entièrement alloués.
@@ -42,7 +42,7 @@ export async function GET(
       },
     });
     
-    // Pour chaque paiement, on calcule le montant restant et on l'ajoute à l'objet retourné.
+    // Calculer dynamiquement le montant restant pour chaque paiement
     const paymentsWithBalance = payments.map(payment => {
       const totalAllocated = payment.allocations.reduce((sum, alloc) => sum + alloc.amountAllocated, 0);
       const remainingAmount = payment.amount - totalAllocated;
@@ -54,7 +54,7 @@ export async function GET(
         status: payment.status,
         remainingAmount: remainingAmount,
       };
-    }).filter(p => status === 'available' ? p.remainingAmount > 0.001 : true); // S'assure qu'on ne retourne que ceux avec un solde positif si on filtre
+    }).filter(p => status === 'available' ? p.remainingAmount > 0.001 : true);
 
     return NextResponse.json(paymentsWithBalance);
 

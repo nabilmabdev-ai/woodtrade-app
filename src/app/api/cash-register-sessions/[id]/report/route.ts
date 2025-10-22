@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Payment, Refund, CashMovementType } from '@prisma/client';
 
+// Helper function to aggregate payments/refunds by method (unchanged)
 function aggregateByMethod<T extends Payment | Refund>(items: T[]) {
   const summary = items.reduce((acc, item) => {
     if (!acc[item.method]) {
@@ -29,8 +30,8 @@ export async function GET(
       include: {
         payments: true,
         refunds: true,
-        // --- CORRECTION APPLIED HERE ---
-        // The relation is named 'cashMovements', not 'movements'.
+        // --- ✅ CORRECTION APPLIQUÉE ICI ---
+        // The relation name in the Prisma schema is 'cashMovements', not 'movements'.
         cashMovements: true,
         openedByUser: { select: { name: true, email: true } },
         closedByUser: { select: { name: true, email: true } },
@@ -42,6 +43,7 @@ export async function GET(
       return new NextResponse(JSON.stringify({ error: 'Session non trouvée' }), { status: 404 });
     }
     
+    // The rest of the logic correctly uses 'session.cashMovements', so it now works as intended.
     const salesSummary = aggregateByMethod(session.payments);
     const totalSales = salesSummary.reduce((acc, s) => acc + s.total, 0);
     const transactionCount = new Set(session.payments.map(p => p.invoiceId)).size;

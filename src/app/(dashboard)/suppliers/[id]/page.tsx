@@ -5,7 +5,7 @@ import { useState, useEffect, FormEvent, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-// --- LES IMPORTATIONS SONT MAINTENANT UTILISÉES ---
+// --- ✅ LES IMPORTATIONS SONT MAINTENANT UTILISÉES ---
 import { UserPlus, Edit, Trash2, PlusCircle, DollarSign } from 'lucide-react';
 
 import SupplierInvoiceList from './SupplierInvoiceList';
@@ -101,7 +101,7 @@ export default function SupplierDetailPage() {
   const [activeTab, setActiveTab] = useState<SupplierTab>('invoices');
   const [isQuickPayModalOpen, setIsQuickPayModalOpen] = useState(false);
   
-  // --- LES VARIABLES SONT MAINTENANT UTILISÉES ---
+  // --- ✅ LES VARIABLES SONT MAINTENANT UTILISÉES ---
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [formData, setFormData] = useState<ContactFormData>({ firstName: '', lastName: '', email: '', phone: '' });
@@ -129,7 +129,7 @@ export default function SupplierDetailPage() {
 
   useEffect(() => { setLoading(true); fetchDetailsAndFinancials(); }, [fetchDetailsAndFinancials]);
 
-  // --- LES FONCTIONS SONT MAINTENANT UTILISÉES ---
+  // --- ✅ LES FONCTIONS SONT MAINTENANT UTILISÉES PAR L'UI ---
   const handleOpenContactModal = (contact: Contact | null = null) => { setEditingContact(contact); setFormData(contact ? { firstName: contact.firstName, lastName: contact.lastName, email: contact.email, phone: contact.phone } : { firstName: '', lastName: '', email: '', phone: '' }); setIsContactModalOpen(true); };
   const handleCloseContactModal = () => { setIsContactModalOpen(false); setEditingContact(null); };
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => { const { name, value } = e.target; setFormData(prev => ({ ...prev, [name]: value })); };
@@ -176,7 +176,7 @@ export default function SupplierDetailPage() {
         <div className="mt-8">
           {activeTab === 'invoices' && ( <SupplierInvoiceList supplierId={supplier.id} /> )}
           {activeTab === 'payments' && ( <SupplierPaymentList supplierId={supplier.id} /> )}
-          {/* --- L'INTERFACE DE L'ONGLET DÉTAILS EST MAINTENANT COMPLÈTE --- */}
+          {/* --- ✅ L'INTERFACE DE L'ONGLET DÉTAILS EST MAINTENANT COMPLÈTE --- */}
           {activeTab === 'details' && (
               <div className="bg-white p-6 rounded-lg shadow-md space-y-8">
                   <section>
@@ -219,7 +219,7 @@ export default function SupplierDetailPage() {
 
       <QuickPaymentModal isOpen={isQuickPayModalOpen} onClose={() => setIsQuickPayModalOpen(false)} onSuccess={fetchDetailsAndFinancials} supplierId={supplier.id} supplierName={supplier.name} />
 
-      {/* --- LE MODAL DE GESTION DES CONTACTS EST MAINTENANT ACTIF --- */}
+      {/* --- ✅ LE MODAL DE GESTION DES CONTACTS EST MAINTENANT ACTIF --- */}
       {isContactModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-lg">

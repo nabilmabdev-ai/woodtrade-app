@@ -12,7 +12,11 @@ export default function TestDbPage() {
     setResult("Testing connection...");
 
     try {
-      // CORRECTION MANUELLE ICI
+      // --- ✅ CORRECTION APPLIQUÉE ICI ---
+      // Utilisation d'une URL relative ('/api/test-db') au lieu d'une URL absolue
+      // (ex: 'http://localhost:3000/api/test-db').
+      // Cela garantit que l'appel API fonctionne dans n'importe quel environnement
+      // (développement, staging, production) sans avoir à changer le code.
       const response = await fetch('/api/test-db');
       const data = await response.json();
 

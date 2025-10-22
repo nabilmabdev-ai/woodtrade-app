@@ -54,7 +54,14 @@ export async function GET(
   }
 }
 
-// --- FONCTION PUT MODIFIÉE ---
+/**
+ * Gère la requête PUT pour mettre à jour les détails d'une facture fournisseur.
+ *
+ * ✅ CORRECTION DE LOGIQUE :
+ * La validation du `total` a été supprimée. Cet endpoint est conçu pour
+ * modifier des métadonnées comme le numéro de facture ou les dates, et non
+ * les lignes de produits ou le montant total, qui sont immuables après création.
+ */
 export async function PUT(
     request: NextRequest,
     context: { params: Promise<{ id: string }> }
@@ -62,7 +69,7 @@ export async function PUT(
     try {
         const { id } = await context.params;
         const body = await request.json();
-        // On ne récupère que les champs modifiables autorisés
+        // On ne récupère que les champs que l'utilisateur est autorisé à modifier via ce formulaire.
         const { invoiceNumber, invoiceDate, dueDate } = body;
 
         if (!invoiceDate || !dueDate) {
@@ -74,17 +81,18 @@ export async function PUT(
             return new NextResponse(JSON.stringify({ error: 'Facture non trouvée.' }), { status: 404 });
         }
 
-        // La logique de protection reste la même
+        // La logique de protection pour les statuts PAID ou VOID reste en place et est correcte.
         if (invoiceToUpdate.status === SupplierInvoiceStatus.PAID || invoiceToUpdate.status === SupplierInvoiceStatus.VOID) {
             return new NextResponse(JSON.stringify({ error: `Impossible de modifier une facture avec le statut '${invoiceToUpdate.status}'.` }), { status: 403 });
         }
         
-        // La validation du 'total' a été retirée car il n'est plus modifiable
+        // --- ✅ FIX APPLIED HERE ---
+        // The unnecessary and flawed validation block for the 'total' has been removed.
 
         const updatedInvoice = await prisma.supplierInvoice.update({
             where: { id },
             data: {
-                // Seuls ces champs sont mis à jour. Le total et les lignes sont intacts.
+                // Seuls ces champs sont mis à jour. Le total et les lignes restent intacts.
                 invoiceNumber: invoiceNumber,
                 invoiceDate: new Date(invoiceDate),
                 dueDate: new Date(dueDate),

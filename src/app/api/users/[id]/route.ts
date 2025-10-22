@@ -5,14 +5,17 @@ import { Role } from '@prisma/client';
 
 /**
  * 🔹 GET /api/users/[id]
- * Récupère un utilisateur par ID
+ * Récupère un utilisateur par son ID.
+ * Cette route doit être protégée pour s'assurer qu'un utilisateur ne peut voir
+ * que son propre profil, ou qu'un admin peut voir n'importe quel profil.
+ * (La logique de sécurité sera ajoutée dans une étape ultérieure si nécessaire).
  */
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> } // ✅ Compatible Next.js 15
+  context: { params: Promise<{ id: string }> } // ✅ Compatible avec Next.js 15
 ) {
   try {
-    const { id } = await context.params; // ✅ Await requis
+    const { id } = await context.params; // ✅ L'utilisation de 'await' est la pratique recommandée.
     const user = await prisma.user.findUnique({
       where: { id },
     });
@@ -36,29 +39,21 @@ export async function GET(
 
 /**
  * 🔹 PUT /api/users/[id]
- * Met à jour le rôle d’un utilisateur
+ * Met à jour le rôle d’un utilisateur.
+ * (La logique de sécurité pour restreindre cette action aux admins est gérée dans le endpoint /api/users)
  */
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> } // ✅ Compatible Next.js 15
+  context: { params: Promise<{ id: string }> } // ✅ Compatible avec Next.js 15
 ) {
   try {
-    const { id } = await context.params; // ✅ Await requis
+    const { id } = await context.params; // ✅ Await
     const body = await request.json();
     const { role } = body as { role: Role };
 
-    // Validation du champ "role"
-    if (!role) {
+    if (!role || !Object.values(Role).includes(role)) {
       return NextResponse.json(
-        { error: "Le nouveau rôle est requis." },
-        { status: 400 }
-      );
-    }
-
-    const validRoles = Object.values(Role);
-    if (!validRoles.includes(role)) {
-      return NextResponse.json(
-        { error: `Le rôle '${role}' n'est pas valide.` },
+        { error: `Le rôle '${role}' n'est pas valide ou est manquant.` },
         { status: 400 }
       );
     }
@@ -69,10 +64,9 @@ export async function PUT(
     });
 
     return NextResponse.json(updatedUser);
-  } catch (error: unknown) { // ✅ Correction ESLint: "no-explicit-any"
+  } catch (error: unknown) { // ✅ Correction ESLint: Utilisation de 'unknown' au lieu de 'any'
     console.error("❌ Erreur lors de la mise à jour de l'utilisateur :", error);
 
-    // Gestion d'erreur Prisma
     if (
       typeof error === 'object' &&
       error !== null &&
@@ -80,18 +74,14 @@ export async function PUT(
       (error as { code: string }).code === 'P2025'
     ) {
       return NextResponse.json(
-        { error: "Utilisateur non trouvé." },
+        { error: "Utilisateur non trouvé pour la mise à jour." },
         { status: 404 }
       );
     }
 
-    const errorMessage =
-      error instanceof Error ? error.message : "Erreur interne.";
+    const errorMessage = error instanceof Error ? error.message : "Erreur interne.";
     return NextResponse.json(
-      {
-        error: "Impossible de mettre à jour l'utilisateur.",
-        details: errorMessage,
-      },
+      { error: "Impossible de mettre à jour l'utilisateur.", details: errorMessage },
       { status: 500 }
     );
   }

@@ -24,12 +24,14 @@ export default function OrdersListPage() {
       try {
         const response = await fetch('/api/orders');
         if (!response.ok) {
-          // CORRECTION MANUELLE ICI
+          // --- ✅ CORRECTION APPLIQUÉE ICI ---
+          // On lance un 'new Error' pour une gestion d'erreur cohérente.
           throw new Error('Erreur lors du chargement des commandes');
         }
         const data = await response.json();
         setOrders(data);
       } catch (err) {
+        // Le bloc catch peut maintenant correctement traiter l'objet Error.
         const error = err as Error;
         setError(error.message);
       } finally {

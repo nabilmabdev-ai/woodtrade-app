@@ -134,12 +134,12 @@ function NewInvoiceForm() {
                     </div>
                     <div>
                         <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">Quantité *</label>
-                        {/* --- CORRECTION : 'required' A ÉTÉ SUPPRIMÉ --- */}
+                        {/* --- ✅ CORRECTION : 'required' A ÉTÉ SUPPRIMÉ --- */}
                         <input id="quantity" type="number" step="any" value={currentQuantity} onChange={(e) => setCurrentQuantity(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
                     </div>
                     <div>
                         <label htmlFor="unitPrice" className="block text-sm font-medium text-gray-700">Prix d&apos;Achat (€) *</label>
-                        {/* --- CORRECTION : 'required' A ÉTÉ SUPPRIMÉ --- */}
+                        {/* --- ✅ CORRECTION : 'required' A ÉTÉ SUPPRIMÉ --- */}
                         <input id="unitPrice" type="number" step="0.01" value={currentUnitPrice} onChange={(e) => setCurrentUnitPrice(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
                     </div>
                 </div>

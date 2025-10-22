@@ -1,11 +1,13 @@
+// src/app/api/cash-registers/route.ts
+
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-// ✅ NOUVEAU : Importer le type depuis Prisma Client
+// ✅ NOUVEAU : Importer le type depuis Prisma Client pour la validation.
 import { CashRegisterType } from '@prisma/client';
 
 /**
  * Gère la requête GET pour récupérer toutes les caisses enregistreuses.
- * La nouvelle propriété 'type' sera automatiquement incluse.
+ * (Cette fonction reste inchangée).
  */
 export async function GET() {
   try {
@@ -27,12 +29,14 @@ export async function GET() {
 
 /**
  * Gère la requête POST pour créer une nouvelle caisse enregistreuse.
- * ✅ MODIFIÉ : Accepte et valide le nouveau champ 'type'.
+ *
+ * ✅ VALIDATION AMÉLIORÉE :
+ * Vérifie que le `type` fourni dans la requête correspond bien à une des valeurs
+ * de l'enum `CashRegisterType` (`SALES` ou `EXPENSE`) avant l'insertion en BDD.
  */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    // ✅ MODIFIÉ : On récupère le 'type' depuis le corps de la requête.
     const { name, location, type } = body as { name: string, location?: string, type: CashRegisterType };
 
     if (!name || !type) {
@@ -42,7 +46,8 @@ export async function POST(request: Request) {
       );
     }
     
-    // ✅ NOUVEAU : Validation pour s'assurer que le type est correct.
+    // --- ✅ FIX APPLIED HERE ---
+    // This validation ensures that the provided 'type' is a valid member of the CashRegisterType enum.
     if (!Object.values(CashRegisterType).includes(type)) {
         return new NextResponse(
             JSON.stringify({ error: `Le type de caisse '${type}' n'est pas valide.` }),
@@ -54,7 +59,7 @@ export async function POST(request: Request) {
       data: {
         name,
         location,
-        type, // ✅ On sauvegarde le type en base de données.
+        type, // Le type est maintenant validé et sûr à insérer.
       },
     });
 

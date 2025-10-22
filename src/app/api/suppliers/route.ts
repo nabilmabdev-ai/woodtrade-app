@@ -2,10 +2,14 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client'; // Importation nécessaire pour les types
+import { Prisma } from '@prisma/client'; // ✅ Importation nécessaire pour les types de filtres
 
 /**
  * Gère la requête GET pour récupérer les fournisseurs, avec une option de recherche.
+ *
+ * ✅ AMÉLIORATION : La fonction accepte désormais un paramètre de recherche `q`
+ * pour filtrer les résultats par nom de fournisseur ou nom de contact, rendant l'API
+ * plus flexible et performante pour les interfaces avec recherche.
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -14,15 +18,17 @@ export async function GET(request: Request) {
   try {
     const whereClause: Prisma.SupplierWhereInput = {};
 
-    // Si un terme de recherche est fourni, on construit la clause de filtre
+    // Si un terme de recherche est fourni, on construit la clause de filtre complexe.
     if (query) {
       whereClause.OR = [
+        // Chercher dans le nom du fournisseur
         {
           name: {
             contains: query,
             mode: 'insensitive', // Ignore la casse
           },
         },
+        // Ou chercher dans le prénom ou le nom de l'un de ses contacts
         {
           contacts: {
             some: {
@@ -47,7 +53,7 @@ export async function GET(request: Request) {
     }
 
     const suppliers = await prisma.supplier.findMany({
-      where: whereClause, // On applique le filtre de recherche ici
+      where: whereClause, // On applique le filtre (vide si pas de query)
       include: {
         contacts: true,
       },
@@ -55,6 +61,7 @@ export async function GET(request: Request) {
         name: 'asc',
       },
     });
+
     return NextResponse.json(suppliers);
 
   } catch (error) {
@@ -72,7 +79,7 @@ export async function GET(request: Request) {
 
 /**
  * Gère la requête POST pour créer un nouveau fournisseur.
- * (Cette fonction reste inchangée)
+ * (Cette fonction reste inchangée mais est correcte).
  */
 export async function POST(request: Request) {
   try {
@@ -82,10 +89,7 @@ export async function POST(request: Request) {
     if (!name || !firstName || !lastName) {
       return new NextResponse(
         JSON.stringify({ error: 'Le nom du fournisseur et le nom/prénom du contact sont requis' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
@@ -94,18 +98,9 @@ export async function POST(request: Request) {
         name,
         vat,
         category,
-        contacts: {
-          create: {
-            firstName,
-            lastName,
-            email,
-            phone,
-          },
-        },
+        contacts: { create: { firstName, lastName, email, phone } },
       },
-      include: {
-        contacts: true,
-      },
+      include: { contacts: true },
     });
 
     return NextResponse.json(newSupplierWithContact, { status: 201 });

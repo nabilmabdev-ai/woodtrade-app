@@ -29,12 +29,14 @@ export default function InventoryPage() {
       try {
         const response = await fetch('/api/inventory');
         if (!response.ok) {
-          // CORRECTION MANUELLE ICI
+          // --- ✅ CORRECTION APPLIQUÉE ICI ---
+          // On lance un 'new Error' pour une gestion d'erreur cohérente.
           throw new Error('Erreur réseau lors du chargement des stocks');
         }
         const data = await response.json();
         setInventory(data);
       } catch (err) {
+        // Le bloc catch peut maintenant correctement traiter l'objet Error.
         const error = err as Error;
         setError(error.message);
       } finally {
@@ -51,6 +53,7 @@ export default function InventoryPage() {
   return (
     <main className="p-8">
       <div className="flex justify-between items-center mb-6">
+        {/* --- ✅ CORRECTION APPLIQUÉE ICI (apostrophe) --- */}
         <h1 className="text-3xl font-bold">Gestion de l&apos;Inventaire</h1>
         <Link
           href="/inventory/adjust"
@@ -66,7 +69,7 @@ export default function InventoryPage() {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produit (SKU)</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantité en stock</th>
-              {/* CORRECTION MANUELLE ICI */}
+              {/* --- ✅ CORRECTION APPLIQUÉE ICI (apostrophe) --- */}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emplacement</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">N° de Lot</th>
             </tr>

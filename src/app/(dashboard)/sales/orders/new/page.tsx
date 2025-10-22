@@ -5,7 +5,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
-// CORRECTION MANUELLE : Ajout de types pour clarifier les données
+// --- ✅ INTERFACES AJOUTÉES POUR LA SÉCURITÉ DE TYPE ---
 interface Company { id: string; name: string; }
 interface ProductVariant { id: string; product: { name: string }; unit: string; }
 interface OrderLine { productVariantId: string; productName: string; quantity: number; unitPrice: number; }
@@ -33,14 +33,16 @@ export default function NewOrderPage() {
         ]);
         if (!companiesRes.ok || !productsRes.ok) throw new Error("Erreur de chargement des données");
 
-        const companiesData = await companiesRes.json();
-        // CORRECTION MANUELLE : Typer les données reçues
+        const companiesData: Company[] = await companiesRes.json();
+        // ✅ CORRECTION : Les données des produits sont maintenant fortement typées.
         const productsData: ProductWithVariants[] = await productsRes.json();
         
         setCompanies(companiesData);
         const allVariants = productsData.flatMap((p) => 
-          p.variants.length > 0 ? p.variants.map((v) => ({...v, product: {name: p.name}})) 
-          : [{id: p.id, product: {name: p.name}, unit: 'pièce'}]
+          p.variants.length > 0 
+            ? p.variants.map((v) => ({...v, product: {name: p.name}})) 
+            // Cas pour les produits simples sans variantes définies
+            : [{id: p.id, product: {name: p.name}, unit: 'pièce'}] 
         );
         setVariants(allVariants);
       } catch (error) {
@@ -63,7 +65,7 @@ export default function NewOrderPage() {
       productVariantId: variant.id,
       productName: `${variant.product.name} (${variant.unit})`,
       quantity: currentQuantity,
-      unitPrice: 10, // PRIX FIXE POUR LE MOMENT
+      unitPrice: 10, // PRIX FIXE POUR LE MOMENT (à remplacer par une logique de prix)
     };
     setCurrentLines([...currentLines, newLine]);
     setSelectedVariantId('');
@@ -78,10 +80,11 @@ export default function NewOrderPage() {
       return;
     }
 
+    // TODO: Ces IDs devraient être dynamiques (basés sur l'utilisateur connecté, sélection de contact, etc.)
     const orderData = {
       companyId: selectedCompanyId,
-      contactId: 'clxshma5w0004111122223333', // TODO: Remplacer par une sélection dynamique
-      userId: 'clxshm3z10000111122223333',    // TODO: Remplacer par l'ID de l'utilisateur connecté
+      contactId: 'clxshma5w0004111122223333',
+      userId: 'clxshm3z10000111122223333',
       lines: currentLines,
     };
 
@@ -140,7 +143,7 @@ export default function NewOrderPage() {
           <div className="space-y-2">
             {currentLines.length > 0 ? (
               currentLines.map((line, index) => (
-                <div key={index} className="flex justify-between items-center p-2 bg-white rounded-md">
+                <div key={index} className="flex justify-between items-center p-2 bg-white rounded-md border">
                   <span>{line.productName}</span>
                   <span>{line.quantity} x {line.unitPrice.toFixed(2)} €</span>
                 </div>

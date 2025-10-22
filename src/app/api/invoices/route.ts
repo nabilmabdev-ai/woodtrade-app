@@ -2,7 +2,7 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-// CORRECTION : Importer Prisma et InvoiceStatus pour les types
+// ✅ CORRECTION : Importer Prisma et InvoiceStatus pour les types
 import { InvoiceStatus, Prisma } from '@prisma/client';
 
 /**
@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const status = searchParams.get('status');
 
-  // CORRECTION : Utiliser 'const' et le type Prisma approprié
+  // ✅ CORRECTION : Le type 'Prisma.InvoiceWhereInput' est maintenant reconnu grâce à l'import.
   const whereClause: Prisma.InvoiceWhereInput = {};
 
   // Vérifier si le statut fourni est une valeur valide de l'enum InvoiceStatus
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
       },
     });
 
-    // On transforme les données pour un affichage plus simple sur le front-end
+    // Transformer les données pour un affichage simple sur le front-end
     const formattedInvoices = invoices.map(invoice => ({
       id: invoice.id,
       orderId: invoice.orderId,

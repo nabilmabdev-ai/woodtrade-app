@@ -1,36 +1,78 @@
-// src/lib/supabase-browser.ts
 "use client";
 
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-// ✅ CORRECTION: Define a minimal placeholder type for the database schema.
-// This avoids using 'any' and satisfies the ESLint rule.
+/**
+ * Define your Supabase Database schema.
+ * Fill in your actual tables, enums, and functions for full type safety.
+ */
 export type Database = {
   public: {
     Tables: {
-      // You can expand this later with your actual tables if you want full type safety
+      users: {
+        Row: {
+          id: string;
+          email: string;
+          name: string | null;
+          created_at: string;
+        };
+        Insert: {
+          email: string;
+          name?: string | null;
+        };
+        Update: {
+          email?: string;
+          name?: string | null;
+        };
+      };
+      posts: {
+        Row: {
+          id: string;
+          title: string;
+          content: string;
+          author_id: string;
+          created_at: string;
+        };
+        Insert: {
+          title: string;
+          content: string;
+          author_id: string;
+        };
+        Update: {
+          title?: string;
+          content?: string;
+        };
+      };
+      // Add more tables here
     };
     Enums: {
-      // You can expand this with your actual enums
+      role: 'user' | 'admin';
+      // Add more enums here
     };
     Functions: {
-      // You can expand this with your actual functions
+      get_user_posts: {
+        Args: { user_id: string };
+        Returns: {
+          id: string;
+          title: string;
+          content: string;
+        }[];
+      };
+      // Add more stored functions here
     };
   };
 };
 
-// Use the new Database type for the singleton instance.
+// Singleton Supabase client
 let supabase: SupabaseClient<Database> | undefined;
 
 /**
- * Gets the singleton instance of the Supabase browser client.
- * This function ensures the client is created only when first needed,
- * avoiding issues during server-side prerendering.
+ * Returns the singleton Supabase browser client.
+ * Ensures the client is initialized only once.
  */
 export const getSupabase = (): SupabaseClient<Database> => {
   if (!supabase) {
-    // Pass the Database type as a generic to the client creation function.
     supabase = createClientComponentClient<Database>();
   }
   return supabase;

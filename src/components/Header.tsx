@@ -2,23 +2,26 @@
 "use client";
 
 import { Fragment } from 'react';
-import { useRouter } from 'next/navigation'; // Link n'est plus nécessaire ici
-import { supabase } from '@/lib/supabase-browser';
+import { useRouter } from 'next/navigation';
+import { getSupabase } from '@/lib/supabase-browser'; // ✅ CORRECTION: Import getSupabase function
 import { useAuth } from '@/hooks/use-auth';
 import { Menu, Transition } from '@headlessui/react';
-// --- ExternalLink a été retiré car le lien POS est supprimé ---
 import { Search, Bell, UserCircle, LogOut } from 'lucide-react';
 
 export default function Header() {
   const router = useRouter();
   const { user } = useAuth();
+  
+  // ✅ CORRECTION: Get the Supabase client instance by calling the function
+  const supabase = getSupabase();
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error('Erreur lors de la déconnexion:', error);
     } else {
-      router.push('/login');
+      // Use router.replace for a cleaner navigation flow after logout
+      router.replace('/login');
     }
   };
 
@@ -39,11 +42,6 @@ export default function Header() {
       {/* Actions de droite */}
       <div className="flex items-center space-x-4">
         
-        {/* --- ✅ BLOC SUPPRIMÉ ---
-            Le lien direct vers le POS a été enlevé pour suivre la nouvelle architecture.
-            L'accès se fait maintenant via la barre latérale.
-        */}
-
         <button className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700">
           <Bell className="h-6 w-6" />
         </button>
@@ -91,4 +89,4 @@ export default function Header() {
       </div>
     </header>
   );
-}
+}```

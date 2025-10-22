@@ -3,19 +3,23 @@
 
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { supabase } from '@/lib/supabase-browser';
+import { getSupabase } from '@/lib/supabase-browser'; // ✅ CORRECTION: Import getSupabase function
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const router = useRouter();
+  
+  // ✅ CORRECTION: Get the Supabase client instance by calling the function
+  const supabase = getSupabase();
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       console.log(`[LOGIN PAGE] Auth event: ${event}, Session=${session ? "YES" : "NO"}`);
       if (event === 'SIGNED_IN' && session) {
         console.log("[LOGIN PAGE] Signed in → pushing to /");
-        router.push('/');
+        // Use router.replace to avoid adding a new entry to the history stack
+        router.replace('/'); 
       }
       if (event === 'SIGNED_OUT') {
         console.log("[LOGIN PAGE] Signed out");
@@ -25,7 +29,7 @@ export default function LoginPage() {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [router]);
+  }, [router, supabase]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">

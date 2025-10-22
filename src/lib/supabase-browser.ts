@@ -1,12 +1,20 @@
 // src/lib/supabase-browser.ts
 "use client";
 
-// CORRECTION : On importe `createClientComponentClient` au lieu de `createBrowserClient`
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
-// Le reste du fichier n'a pas besoin de vos clés en dur, car la bibliothèque
-// les lira automatiquement depuis vos variables d'environnement `NEXT_PUBLIC_...`
-// C'est une meilleure pratique.
+// Singleton instance to ensure the client is created only once.
+let supabase: SupabaseClient | undefined;
 
-// CORRECTION : On appelle la nouvelle fonction. Elle n'a pas besoin d'arguments ici.
-export const supabase = createClientComponentClient();
+/**
+ * Gets the singleton instance of the Supabase browser client.
+ * This function ensures the client is created only when first needed,
+ * avoiding issues during server-side prerendering.
+ */
+export const getSupabase = () => {
+  if (!supabase) {
+    supabase = createClientComponentClient();
+  }
+  return supabase;
+};

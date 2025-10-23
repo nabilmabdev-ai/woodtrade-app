@@ -3,8 +3,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { CashRegisterType, CashRegisterSessionStatus, Prisma, Role } from '@prisma/client';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { authorize } from '@/lib/authorize';
 
 /**
  * Gère la requête GET pour récupérer les caisses enregistreuses,
@@ -112,33 +111,9 @@ export async function GET(request: Request) {
  * ✅ SÉCURITÉ APPLIQUÉE : Seuls les admins et super-admins peuvent créer une caisse.
  */
 export async function POST(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
-  
-  // Define roles that are allowed to create a cash register
-  const ALLOWED_ROLES: Role[] = [Role.ADMIN, Role.SUPER_ADMIN];
-
   try {
-    // 1. Authenticate the user
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      return new NextResponse(JSON.stringify({ error: 'Non autorisé.' }), { status: 401 });
-    }
+    await authorize('manageCashRegisters');
 
-    // 2. Authorize the user based on their role
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { role: true },
-    });
-
-    if (!user) {
-      return new NextResponse(JSON.stringify({ error: 'Utilisateur non trouvé.' }), { status: 403 });
-    }
-
-    if (!ALLOWED_ROLES.includes(user.role)) {
-      return new NextResponse(JSON.stringify({ error: 'Accès refusé. Permissions insuffisantes.' }), { status: 403 });
-    }
-
-    // 3. If authorized, proceed with the business logic
     const body = await request.json();
     const { name, location, type } = body as { name: string, location?: string, type: CashRegisterType };
 
@@ -156,11 +131,18 @@ export async function POST(request: Request) {
 
     return NextResponse.json(newCashRegister, { status: 201 });
   } catch (error) {
-    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
-      return new NextResponse(JSON.stringify({ error: 'Une caisse avec ce nom existe déjà' }), { status: 409 });
+    if (error instanceof Error) {
+      if (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN') {
+        return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
+      }
     }
+    // Prisma Unique Constraint Violation
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
+      return NextResponse.json({ error: 'Une caisse avec ce nom existe déjà' }, { status: 409 });
+    }
+
     console.error('Erreur lors de la création de la caisse:', error);
     const errorMessage = error instanceof Error ? error.message : "Erreur interne.";
-    return new NextResponse(JSON.stringify({ error: 'Impossible de créer la caisse', details: errorMessage }), { status: 500 });
+    return NextResponse.json({ error: 'Impossible de créer la caisse', details: errorMessage }, { status: 500 });
   }
 }

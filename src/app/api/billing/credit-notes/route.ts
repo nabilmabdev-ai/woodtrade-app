@@ -1,15 +1,20 @@
-// src/app/api/billing/credit-notes/route.ts
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Role } from '@prisma/client';
 import { authorize } from '@/lib/authorize';
+import { backendPermissionsMap } from '@/lib/permissions-map';
+
+const GET_ALLOWED_ROLES = backendPermissionsMap['/billing/credit-notes']['GET'];
+const POST_ALLOWED_ROLES = backendPermissionsMap['/billing/credit-notes']['POST'];
 
 /**
  * Gère la requête GET pour récupérer tous les avoirs.
  */
 export async function GET() {
   try {
+    await authorize(GET_ALLOWED_ROLES, 'GET /billing/credit-notes');
+
     const creditNotes = await prisma.creditNote.findMany({
       include: {
         company: {
@@ -38,8 +43,7 @@ export async function GET() {
  */
 export async function POST(request: Request) {
   try {
-    const allowedRoles: Role[] = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'ACCOUNTANT'];
-    await authorize(allowedRoles);
+    await authorize(POST_ALLOWED_ROLES, 'POST /billing/credit-notes');
 
     const body = await request.json();
     const { companyId, amount, reason, date } = body as {

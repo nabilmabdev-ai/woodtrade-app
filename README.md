@@ -1,4 +1,22 @@
+
+# Woodtrade App
+
+[![RBAC Integrity](https://github.com/nabilmabdev-ai/woodtrade-app/actions/workflows/rbac-audit.yml/badge.svg)](https://github.com/nabilmabdev-ai/woodtrade-app/actions/workflows/rbac-audit.yml)
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+## RBAC Integrity Pipeline
+
+This project includes a CI/CD pipeline to enforce Role-Based Access Control (RBAC) integrity. The pipeline runs on every pull request and push to the `main` branch, and it will fail if any mismatches are detected between the frontend and backend RBAC rules.
+
+The pipeline is defined in the [`.github/workflows/rbac-audit.yml`](.github/workflows/rbac-audit.yml) file. It performs the following steps:
+
+1.  **Installs dependencies and builds the project.**
+2.  **Runs the RBAC audit script.** This script scans all API routes and compares the `ALLOWED_ROLES` with the frontend permissions defined in `src/lib/permissions.ts`.
+3.  **Verifies the audit report.** A second script checks the generated report for any mismatches. If any are found, the build fails.
+4.  **Uploads the audit report as an artifact.** If the build fails, the `rbac_audit/report.json` and `rbac_audit/summary.md` files are uploaded as artifacts for inspection.
+
+This pipeline ensures that all changes to the codebase are compliant with the defined RBAC rules, preventing accidental or unauthorized changes to user permissions.
 
 ## Getting Started
 

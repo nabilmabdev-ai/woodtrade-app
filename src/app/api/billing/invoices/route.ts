@@ -1,16 +1,18 @@
-// src/app/api/billing/invoices/route.ts
+
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Role } from '@prisma/client';
 import { authorize } from '@/lib/authorize';
+import { backendPermissionsMap } from '@/lib/permissions-map';
+
+const ALLOWED_ROLES = backendPermissionsMap['/billing/invoices']['POST'];
 
 /**
  * Gère la requête POST pour créer une nouvelle facture.
  */
 export async function POST(request: Request) {
   try {
-    const allowedRoles: Role[] = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'CASHIER'];
-    await authorize(allowedRoles);
+    await authorize(ALLOWED_ROLES, 'POST /billing/invoices');
 
     const body = await request.json();
     const { companyId, amount, dueDate, items } = body as {

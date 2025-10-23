@@ -1,9 +1,11 @@
-// src/app/api/cash-registers/route.ts
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { CashRegisterType, CashRegisterSessionStatus, Prisma, Role } from '@prisma/client';
 import { authorize } from '@/lib/authorize';
+import { backendPermissionsMap } from '@/lib/permissions-map';
+
+const POST_ALLOWED_ROLES = backendPermissionsMap['/cash-registers']['POST'];
 
 /**
  * Gère la requête GET pour récupérer les caisses enregistreuses,
@@ -112,8 +114,7 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   try {
-    const allowedRoles: Role[] = ['SUPER_ADMIN', 'ADMIN'];
-    await authorize(allowedRoles);
+    await authorize(POST_ALLOWED_ROLES, 'POST /cash-registers');
 
     const body = await request.json();
     const { name, location, type } = body as { name: string, location?: string, type: CashRegisterType };

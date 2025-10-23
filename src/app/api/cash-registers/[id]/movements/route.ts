@@ -1,9 +1,11 @@
-// src/app/api/cash-registers/[id]/movements/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Prisma, CashMovementType, CashRegisterType, Role } from '@prisma/client';
 import { authorize } from '@/lib/authorize';
+import { backendPermissionsMap } from '@/lib/permissions-map';
+
+const POST_ALLOWED_ROLES = backendPermissionsMap['/cash-registers/[id]/movements']['POST'];
 
 /**
  * Gère la requête GET pour récupérer les mouvements d'une caisse spécifique,
@@ -94,8 +96,7 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const allowedRoles: Role[] = ['SUPER_ADMIN', 'ADMIN', 'MANAGER'];
-    const user = await authorize(allowedRoles);
+    const user = await authorize(POST_ALLOWED_ROLES, 'POST /cash-registers/[id]/movements');
 
     const { id: cashRegisterId } = await context.params;
     const body = await request.json();

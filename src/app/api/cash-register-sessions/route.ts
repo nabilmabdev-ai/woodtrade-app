@@ -1,11 +1,13 @@
-// src/app/api/cash-register-sessions/route.ts
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { CashRegisterSessionStatus, Role } from '@prisma/client';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
+import { backendPermissionsMap } from '@/lib/permissions-map';
+import { authorize } from '@/lib/authorize';
 
+const ALLOWED_ROLES = backendPermissionsMap['/cash-register-sessions']['POST'];
 
 // The GET function for checking active sessions remains unchanged.
 export async function GET(request: Request) {
@@ -58,35 +60,8 @@ export async function GET(request: Request) {
  * 4.  Empêche l'ouverture d'une session si une autre est déjà active sur la même caisse.
  */
 export async function POST(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
-
-  // Define roles that are allowed to open a session
-  const ALLOWED_ROLES: Role[] = [Role.CASHIER, Role.MANAGER, Role.ADMIN, Role.SUPER_ADMIN];
-  
   try {
-    // 1. Authenticate the user.
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      return new NextResponse(JSON.stringify({ error: 'Non autorisé. Veuillez vous reconnecter.' }), { status: 401 });
-    }
-    const userId = session.user.id;
-    
-    // Upsert user to ensure they exist in the local database.
-    const user = await prisma.user.upsert({
-      where: { id: userId },
-      update: {}, 
-      create: {
-        id: userId,
-        email: session.user.email!,
-        name: session.user.user_metadata?.full_name ?? session.user.email,
-        role: Role.CASHIER, // Assign a safe default role
-      }
-    });
-
-    // 2. Authorize the user based on their role.
-    if (!ALLOWED_ROLES.includes(user.role)) {
-        return new NextResponse(JSON.stringify({ error: 'Accès refusé. Permissions insuffisantes pour ouvrir une session.' }), { status: 403 });
-    }
+    const user = await authorize(ALLOWED_ROLES, 'POST /cash-register-sessions');
     
     // 3. Proceed with the business logic for opening the session.
     const body = await request.json();
@@ -118,7 +93,7 @@ export async function POST(request: Request) {
       data: {
         cashRegisterId,
         openingBalance: balance,
-        openedByUserId: userId, 
+        openedByUserId: user.id,
         status: CashRegisterSessionStatus.OPEN,
       },
     });
@@ -126,6 +101,9 @@ export async function POST(request: Request) {
     return NextResponse.json(newSession, { status: 201 });
 
   } catch (error) {
+    if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
+      return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
+    }
     console.error("Erreur lors de l'ouverture de la session de caisse:", error);
     const errorMessage = error instanceof Error ? error.message : "Erreur interne.";
     return new NextResponse(JSON.stringify({ error: "Impossible d'ouvrir la session de caisse.", details: errorMessage }), { status: 500 });

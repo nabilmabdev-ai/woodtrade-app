@@ -1,15 +1,20 @@
-// src/app/api/billing/payments/route.ts
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { PaymentStatus, Role } from '@prisma/client';
 import { authorize } from '@/lib/authorize';
+import { backendPermissionsMap } from '@/lib/permissions-map';
+
+const GET_ALLOWED_ROLES = backendPermissionsMap['/billing/payments']['GET'];
+const POST_ALLOWED_ROLES = backendPermissionsMap['/billing/payments']['POST'];
 
 /**
  * Gère la requête GET pour récupérer tous les paiements.
  */
 export async function GET() {
   try {
+    await authorize(GET_ALLOWED_ROLES, 'GET /billing/payments');
+
     const payments = await prisma.payment.findMany({
       include: {
         company: { select: { name: true } },
@@ -46,8 +51,7 @@ export async function GET() {
  */
 export async function POST(request: Request) {
   try {
-    const allowedRoles: Role[] = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'ACCOUNTANT'];
-    await authorize(allowedRoles);
+    await authorize(POST_ALLOWED_ROLES, 'POST /billing/payments');
 
     const body = await request.json();
     const { companyId, amount, paymentDate, method } = body as {

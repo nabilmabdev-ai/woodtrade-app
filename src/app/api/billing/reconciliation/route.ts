@@ -1,9 +1,11 @@
-// src/app/api/billing/reconciliation/route.ts
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { InvoiceStatus, PaymentStatus, CreditNoteStatus, Role } from '@prisma/client';
 import { authorize } from '@/lib/authorize';
+import { backendPermissionsMap } from '@/lib/permissions-map';
+
+const ALLOWED_ROLES = backendPermissionsMap['/billing/reconciliation']['POST'];
 
 interface ReconciliationPayload {
   sourceId: string;
@@ -17,8 +19,7 @@ interface ReconciliationPayload {
  */
 export async function POST(request: Request) {
   try {
-    const allowedRoles: Role[] = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'ACCOUNTANT'];
-    await authorize(allowedRoles);
+    await authorize(ALLOWED_ROLES, 'POST /billing/reconciliation');
 
     const body = await request.json() as ReconciliationPayload;
     const { sourceId, sourceType, invoiceIds } = body;

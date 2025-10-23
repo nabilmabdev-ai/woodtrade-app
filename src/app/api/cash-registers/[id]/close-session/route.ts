@@ -1,16 +1,18 @@
-// src/app/api/cash-registers/[id]/close-session/route.ts
+
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Role } from '@prisma/client';
 import { authorize } from '@/lib/authorize';
+import { backendPermissionsMap } from '@/lib/permissions-map';
+
+const ALLOWED_ROLES = backendPermissionsMap['/cash-registers/[id]/close-session']['POST'];
 
 /**
  * Gère la requête POST pour fermer une session de caisse.
  */
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
-    const allowedRoles: Role[] = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'CASHIER'];
-    const user = await authorize(allowedRoles);
+    const user = await authorize(ALLOWED_ROLES, 'POST /cash-registers/[id]/close-session');
 
     const { id: sessionId } = params;
     const body = await request.json();

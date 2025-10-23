@@ -7,7 +7,8 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "test": "jest"
+    "test": "jest",
+    "test:rbac": "node scripts/rbac-audit.js"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
@@ -32,7 +33,7 @@
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/jest": "^30.0.0",
-    "@types/node": "^20",
+    "@types/node": "^20.19.23",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
@@ -41,7 +42,9 @@
     "prisma": "^6.16.2",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.5",
+    "ts-morph": "^27.0.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.9.3"
   }
 }

@@ -4,17 +4,17 @@
 
 import { useState, FormEvent } from 'react';
 import toast from 'react-hot-toast';
-// ✅ NOUVEAU : Importer le type depuis Prisma pour le champ de sélection
 import { CashRegisterType } from '@prisma/client';
 
 interface AddCashRegisterFormProps {
   onRegisterAdded: () => void;
+  // Prop to close the drawer/modal from the parent
+  onClose?: () => void;
 }
 
-export default function AddCashRegisterForm({ onRegisterAdded }: AddCashRegisterFormProps) {
+export default function AddCashRegisterForm({ onRegisterAdded, onClose }: AddCashRegisterFormProps) {
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
-  // ✅ NOUVEAU : État pour gérer le type de caisse, avec 'SALES' par défaut.
   const [type, setType] = useState<CashRegisterType>(CashRegisterType.SALES);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -25,81 +25,85 @@ export default function AddCashRegisterForm({ onRegisterAdded }: AddCashRegister
     const promise = fetch('/api/cash-registers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      // ✅ MODIFIÉ : On envoie le nouveau champ 'type' à l'API.
       body: JSON.stringify({ name, location, type }),
     }).then(async (response) => {
       if (response.ok) {
         setName('');
         setLocation('');
-        setType(CashRegisterType.SALES); // Reset du formulaire
+        setType(CashRegisterType.SALES);
         onRegisterAdded();
-        return 'Caisse ajoutée avec succès !';
+        if (onClose) onClose(); // Close the drawer on success
+        return 'Register added successfully!';
       } else {
         const errorData = await response.json();
-        return Promise.reject(errorData.error || 'Impossible de créer la caisse');
+        return Promise.reject(errorData.error || 'Failed to create register');
       }
     });
 
     toast.promise(promise, {
-      loading: 'Ajout de la caisse...',
+      loading: 'Adding register...',
       success: (message) => message,
-      error: (err) => `Erreur: ${err}`,
+      error: (err) => `Error: ${err}`,
     }).finally(() => {
         setIsSubmitting(false);
     });
   };
 
   return (
-    <div className="mb-8 p-6 border rounded-lg bg-gray-50">
-      <h2 className="text-2xl font-semibold mb-4">Ajouter une nouvelle caisse</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Champ Nom (légèrement ajusté pour la grille) */}
-          <div className="md:col-span-1">
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">Nom de la caisse (unique) *</label>
-            <input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              placeholder="Ex: Caisse Principale"
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
-
-          {/* ✅ NOUVEAU : Champ de sélection pour le Type */}
-          <div className="md:col-span-1">
-            <label htmlFor="type" className="block text-sm font-medium text-gray-700">Type de caisse *</label>
-            <select
-              id="type"
-              value={type}
-              onChange={(e) => setType(e.target.value as CashRegisterType)}
-              required
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-            >
-              <option value={CashRegisterType.SALES}>Caisse de Ventes (POS)</option>
-              <option value={CashRegisterType.EXPENSE}>Caisse de Dépenses</option>
-            </select>
-          </div>
-
-          {/* Champ Emplacement */}
-          <div className="md:col-span-1">
-            <label htmlFor="location" className="block text-sm font-medium text-gray-700">Emplacement (Optionnel)</label>
-            <input
-              id="location"
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Ex: Comptoir d'accueil"
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
+    // The form is now self-contained, ready to be placed in a drawer/modal.
+    <form onSubmit={handleSubmit} className="flex flex-col h-full p-6 space-y-6">
+      <div className="flex-1 space-y-4">
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700">Register Name (unique) *</label>
+          <input
+            id="name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            placeholder="e.g., Main Register"
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          />
         </div>
+
+        <div>
+          <label htmlFor="type" className="block text-sm font-medium text-gray-700">Register Type *</label>
+          <select
+            id="type"
+            value={type}
+            onChange={(e) => setType(e.target.value as CashRegisterType)}
+            required
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+          >
+            {/* ✅ MODIFIED according to plan: Neutral microcopy */}
+            <option value={CashRegisterType.SALES}>Register</option>
+            <option value={CashRegisterType.EXPENSE}>Expense Register</option>
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="location" className="block text-sm font-medium text-gray-700">Location (Optional)</label>
+          <input
+            id="location"
+            type="text"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="e.g., Front Desk"
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+      </div>
+      
+      <div className="flex-shrink-0 flex justify-end space-x-4">
+        {onClose && (
+           <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+             Cancel
+           </button>
+        )}
         <button type="submit" disabled={isSubmitting} className="px-4 py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400">
-          {isSubmitting ? 'Ajout en cours...' : 'Ajouter la caisse'}
+          {isSubmitting ? 'Adding...' : 'Add Register'}
         </button>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 }

@@ -118,7 +118,8 @@ export default function MovementModal({ isOpen, onClose, onSubmit, isSubmitting,
                     <label htmlFor="applyToSession" className="font-medium text-gray-700">
                         Apply to current session
                     </label>
-                    <p className="text-gray-500">Uncheck this if the movement is not part of the current session's cash flow.</p>
+                    {/* ✅ FIXED: Replaced ' isn't ' with ' is not ' to remove the apostrophe */}
+                    <p className="text-gray-500">Uncheck this if the movement is not part of the current session&apos;s cash flow.</p>
                 </div>
             </div>
           )}

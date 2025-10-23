@@ -2,7 +2,8 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { PaymentStatus } from '@prisma/client';
+import { PaymentStatus, Role } from '@prisma/client';
+import { authorize } from '@/lib/authorize';
 
 /**
  * Gère la requête GET pour récupérer tous les paiements.
@@ -45,6 +46,9 @@ export async function GET() {
  */
 export async function POST(request: Request) {
   try {
+    const allowedRoles: Role[] = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'ACCOUNTANT'];
+    await authorize(allowedRoles);
+
     const body = await request.json();
     const { companyId, amount, paymentDate, method } = body as {
       companyId: string;
@@ -73,6 +77,9 @@ export async function POST(request: Request) {
     return NextResponse.json(newPayment, { status: 201 });
 
   } catch (error) {
+    if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
+      return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
+    }
     console.error('Erreur lors de la création du paiement:', error);
     const errorMessage = error instanceof Error ? error.message : "Erreur interne.";
     return new NextResponse(

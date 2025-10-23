@@ -3,8 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Prisma, CashMovementType, CashRegisterType, Role } from '@prisma/client';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { authorize } from '@/lib/authorize';
 
 /**
  * Gère la requête GET pour récupérer les mouvements d'une caisse spécifique,
@@ -94,25 +93,10 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
-
-  // Define roles that are allowed to perform manual cash movements
-  const ALLOWED_ROLES: Role[] = [Role.MANAGER, Role.ADMIN, Role.SUPER_ADMIN];
-  
   try {
-    // 1. Authenticate the user
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      return new NextResponse(JSON.stringify({ error: 'Non autorisé' }), { status: 401 });
-    }
+    const allowedRoles: Role[] = ['SUPER_ADMIN', 'ADMIN', 'MANAGER'];
+    const user = await authorize(allowedRoles);
 
-    // 2. Authorize the user based on their role
-    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-    if (!user || !ALLOWED_ROLES.includes(user.role)) {
-      return new NextResponse(JSON.stringify({ error: 'Accès refusé. Permissions insuffisantes.' }), { status: 403 });
-    }
-    
-    // 3. If authorized, proceed with the business logic
     const { id: cashRegisterId } = await context.params;
     const body = await request.json();
     const { amount, type, reason, sessionId } = body as {
@@ -142,7 +126,7 @@ export async function POST(
       data: {
         sessionId: cashRegister.type === CashRegisterType.SALES ? sessionId : undefined,
         cashRegisterId: cashRegister.type === CashRegisterType.EXPENSE ? cashRegisterId : undefined,
-        userId: session.user.id,
+        userId: user.id,
         amount: finalAmount,
         type,
         reason,
@@ -152,6 +136,9 @@ export async function POST(
     return NextResponse.json(newMovement, { status: 201 });
 
   } catch (error) {
+    if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
+      return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
+    }
     const id = (await context.params)?.id || 'inconnu';
     console.error(`Erreur lors de la création d'un mouvement pour la caisse ${id}:`, error);
     const errorMessage = error instanceof Error ? error.message : "Erreur interne.";

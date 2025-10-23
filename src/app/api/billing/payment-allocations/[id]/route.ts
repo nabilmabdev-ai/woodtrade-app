@@ -2,7 +2,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { InvoiceStatus, PaymentStatus } from '@prisma/client';
+import { InvoiceStatus, PaymentStatus, Role } from '@prisma/client';
+import { authorize } from '@/lib/authorize';
 
 /**
  * Gère la requête DELETE pour supprimer une allocation de paiement client.
@@ -11,9 +12,12 @@ import { InvoiceStatus, PaymentStatus } from '@prisma/client';
  */
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id:string }> }
 ) {
   try {
+    const allowedRoles: Role[] = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'ACCOUNTANT'];
+    await authorize(allowedRoles);
+
     const { id: allocationId } = await context.params;
 
     const result = await prisma.$transaction(async (tx) => {
@@ -66,6 +70,9 @@ export async function DELETE(
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
+    if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
+      return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
+    }
     console.error("Erreur lors de la suppression de l'allocation de paiement:", error);
     const errorMessage = error instanceof Error ? error.message : "Impossible de traiter la requête.";
     return new NextResponse(JSON.stringify({ error: errorMessage }), { status: 500 });

@@ -1,0 +1,84 @@
+[
+  {
+    "file": "billing/credit-notes/route.ts",
+    "action": "manageCreditNotes",
+    "hardcodedRoles": [
+      "SUPER_ADMIN",
+      "ADMIN",
+      "MANAGER",
+      "ACCOUNTANT"
+    ],
+    "centralizedRoles": [
+      "SUPER_ADMIN",
+      "ADMIN",
+      "MANAGER",
+      "ACCOUNTANT"
+    ],
+    "status": "✅ MATCH"
+  },
+  {
+    "file": "billing/invoices/route.ts",
+    "action": "manageInvoices",
+    "hardcodedRoles": [
+      "SUPER_ADMIN",
+      "ADMIN",
+      "MANAGER",
+      "CASHIER"
+    ],
+    "centralizedRoles": [
+      "SUPER_ADMIN",
+      "ADMIN",
+      "MANAGER",
+      "ACCOUNTANT"
+    ],
+    "status": "❌ MISMATCH"
+  },
+  {
+    "file": "billing/payments/route.ts",
+    "action": "managePayments",
+    "hardcodedRoles": [
+      "SUPER_ADMIN",
+      "ADMIN",
+      "MANAGER",
+      "ACCOUNTANT"
+    ],
+    "centralizedRoles": [
+      "SUPER_ADMIN",
+      "ADMIN",
+      "MANAGER",
+      "ACCOUNTANT"
+    ],
+    "status": "✅ MATCH"
+  },
+  {
+    "file": "billing/reconciliation/route.ts",
+    "action": "manageReconciliation",
+    "hardcodedRoles": [
+      "SUPER_ADMIN",
+      "ADMIN",
+      "MANAGER",
+      "ACCOUNTANT"
+    ],
+    "centralizedRoles": [
+      "SUPER_ADMIN",
+      "ADMIN",
+      "ACCOUNTANT"
+    ],
+    "status": "❌ MISMATCH"
+  },
+  {
+    "file": "cash-registers/route.ts",
+    "action": "manageCashRegisters",
+    "hardcodedRoles": [
+      "SUPER_ADMIN",
+      "ADMIN"
+    ],
+    "centralizedRoles": [
+      "SUPER_ADMIN",
+      "ADMIN",
+      "MANAGER",
+      "CASHIER"
+    ],
+    "status": "❌ MISMATCH"
+  }
+]

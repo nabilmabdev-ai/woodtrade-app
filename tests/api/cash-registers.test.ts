@@ -3,6 +3,7 @@ import { POST } from '@/app/api/cash-registers/route';
 import { prisma } from '@/lib/prisma';
 import { Role } from '@prisma/client';
 import { NextRequest } from 'next/server';
+import { authorize } from '@/lib/authorize';
 
 jest.mock('@/lib/prisma', () => ({
   prisma: {
@@ -15,20 +16,14 @@ jest.mock('@/lib/prisma', () => ({
   },
 }));
 
-jest.mock('@/lib/supabase-server', () => ({
-  createSupabaseServerClient: () => ({
-    auth: {
-      getSession: jest.fn().mockResolvedValue({
-        data: { session: { user: { id: 'test-user-id' } } },
-      }),
-    },
-  }),
+jest.mock('@/lib/authorize', () => ({
+  authorize: jest.fn(),
 }));
 
 describe('POST /api/cash-registers', () => {
   it('should return 403 Forbidden for unauthorized user', async () => {
-    // Mock the user role
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({ role: Role.CASHIER });
+    // Mock authorize to reject the request
+    (authorize as jest.Mock).mockRejectedValue(new Error('FORBIDDEN'));
 
     const request = new NextRequest('http://localhost/api/cash-registers', {
       method: 'POST',

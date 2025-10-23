@@ -17,8 +17,7 @@ interface ReconciliationPayload {
  */
 export async function POST(request: Request) {
   try {
-    const allowedRoles: Role[] = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'ACCOUNTANT'];
-    await authorize(allowedRoles);
+    await authorize('manageReconciliation');
 
     const body = await request.json() as ReconciliationPayload;
     const { sourceId, sourceType, invoiceIds } = body;

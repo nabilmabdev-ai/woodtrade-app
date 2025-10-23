@@ -38,8 +38,7 @@ export async function GET() {
  */
 export async function POST(request: Request) {
   try {
-    const allowedRoles: Role[] = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'ACCOUNTANT'];
-    await authorize(allowedRoles);
+    await authorize('manageCreditNotes');
 
     const body = await request.json();
     const { companyId, amount, reason, date } = body as {

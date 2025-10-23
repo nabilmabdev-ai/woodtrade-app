@@ -1,9 +1,11 @@
 // lib/authorize.ts
+// lib/authorize.ts
 import { Role, User } from '@prisma/client';
 import { createSupabaseServerClient } from './supabase-server';
 import { prisma } from './prisma';
+import { permissions, PermissionAction } from './permissions-map';
 
-export async function authorize(allowedRoles: Role[]): Promise<User> {
+export async function authorize(action: PermissionAction): Promise<User> {
   const supabase = createSupabaseServerClient();
   const { data: { session } } = await supabase.auth.getSession();
 
@@ -20,7 +22,8 @@ export async function authorize(allowedRoles: Role[]): Promise<User> {
     throw new Error('UNAUTHORIZED');
   }
 
-  if (!allowedRoles.includes(user.role)) {
+  const allowedRoles = permissions[action];
+  if (!allowedRoles || !allowedRoles.includes(user.role)) {
     throw new Error('FORBIDDEN');
   }
 

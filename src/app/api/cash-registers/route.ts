@@ -112,8 +112,7 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   try {
-    const allowedRoles: Role[] = ['SUPER_ADMIN', 'ADMIN'];
-    await authorize(allowedRoles);
+    await authorize('manageCashRegisters');
 
     const body = await request.json();
     const { name, location, type } = body as { name: string, location?: string, type: CashRegisterType };
@@ -132,14 +131,18 @@ export async function POST(request: Request) {
 
     return NextResponse.json(newCashRegister, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
-      return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
+    if (error instanceof Error) {
+      if (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN') {
+        return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
+      }
     }
+    // Prisma Unique Constraint Violation
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
-      return new NextResponse(JSON.stringify({ error: 'Une caisse avec ce nom existe déjà' }), { status: 409 });
+      return NextResponse.json({ error: 'Une caisse avec ce nom existe déjà' }, { status: 409 });
     }
+
     console.error('Erreur lors de la création de la caisse:', error);
     const errorMessage = error instanceof Error ? error.message : "Erreur interne.";
-    return new NextResponse(JSON.stringify({ error: 'Impossible de créer la caisse', details: errorMessage }), { status: 500 });
+    return NextResponse.json({ error: 'Impossible de créer la caisse', details: errorMessage }, { status: 500 });
   }
 }

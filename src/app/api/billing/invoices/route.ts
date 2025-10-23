@@ -9,8 +9,7 @@ import { authorize } from '@/lib/authorize';
  */
 export async function POST(request: Request) {
   try {
-    const allowedRoles: Role[] = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'CASHIER'];
-    await authorize(allowedRoles);
+    await authorize('manageInvoices');
 
     const body = await request.json();
     const { companyId, amount, dueDate, items } = body as {

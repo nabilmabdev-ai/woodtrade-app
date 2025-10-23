@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Prisma, CashMovementType, CashRegisterType } from '@prisma/client';
+import { Prisma, CashMovementType, CashRegisterType, Role } from '@prisma/client';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 
@@ -88,19 +88,31 @@ export async function GET(
 
 /**
  * Gère la requête POST pour créer un nouveau mouvement de caisse.
+ * ✅ SÉCURITÉ APPLIQUÉE : Seuls les managers ou admins peuvent ajouter/retirer des fonds.
  */
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   const supabase = createRouteHandlerClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
 
-  if (!session) {
-    return new NextResponse(JSON.stringify({ error: 'Non autorisé' }), { status: 401 });
-  }
+  // Define roles that are allowed to perform manual cash movements
+  const ALLOWED_ROLES: Role[] = [Role.MANAGER, Role.ADMIN, Role.SUPER_ADMIN];
   
   try {
+    // 1. Authenticate the user
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return new NextResponse(JSON.stringify({ error: 'Non autorisé' }), { status: 401 });
+    }
+
+    // 2. Authorize the user based on their role
+    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+    if (!user || !ALLOWED_ROLES.includes(user.role)) {
+      return new NextResponse(JSON.stringify({ error: 'Accès refusé. Permissions insuffisantes.' }), { status: 403 });
+    }
+    
+    // 3. If authorized, proceed with the business logic
     const { id: cashRegisterId } = await context.params;
     const body = await request.json();
     const { amount, type, reason, sessionId } = body as {
@@ -128,7 +140,6 @@ export async function POST(
 
     const newMovement = await prisma.cashMovement.create({
       data: {
-        // ✅ FIX APPLIED HERE: Using the imported enum for type-safe comparisons.
         sessionId: cashRegister.type === CashRegisterType.SALES ? sessionId : undefined,
         cashRegisterId: cashRegister.type === CashRegisterType.EXPENSE ? cashRegisterId : undefined,
         userId: session.user.id,

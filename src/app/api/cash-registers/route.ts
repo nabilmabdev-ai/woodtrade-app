@@ -2,7 +2,9 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { CashRegisterType, CashRegisterSessionStatus, Prisma } from '@prisma/client';
+import { CashRegisterType, CashRegisterSessionStatus, Prisma, Role } from '@prisma/client';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 /**
  * Gère la requête GET pour récupérer les caisses enregistreuses,
@@ -106,10 +108,37 @@ export async function GET(request: Request) {
 
 
 /**
- * POST function remains unchanged.
+ * Gère la requête POST pour créer une nouvelle caisse enregistreuse.
+ * ✅ SÉCURITÉ APPLIQUÉE : Seuls les admins et super-admins peuvent créer une caisse.
  */
 export async function POST(request: Request) {
+  const supabase = createRouteHandlerClient({ cookies });
+  
+  // Define roles that are allowed to create a cash register
+  const ALLOWED_ROLES: Role[] = [Role.ADMIN, Role.SUPER_ADMIN];
+
   try {
+    // 1. Authenticate the user
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return new NextResponse(JSON.stringify({ error: 'Non autorisé.' }), { status: 401 });
+    }
+
+    // 2. Authorize the user based on their role
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true },
+    });
+
+    if (!user) {
+      return new NextResponse(JSON.stringify({ error: 'Utilisateur non trouvé.' }), { status: 403 });
+    }
+
+    if (!ALLOWED_ROLES.includes(user.role)) {
+      return new NextResponse(JSON.stringify({ error: 'Accès refusé. Permissions insuffisantes.' }), { status: 403 });
+    }
+
+    // 3. If authorized, proceed with the business logic
     const body = await request.json();
     const { name, location, type } = body as { name: string, location?: string, type: CashRegisterType };
 

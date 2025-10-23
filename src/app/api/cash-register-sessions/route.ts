@@ -53,40 +53,42 @@ export async function GET(request: Request) {
  *
  * ✅ SÉCURITÉ ET ROBUSTESSE APPLIQUÉES :
  * 1.  Utilise la session Supabase pour identifier l'utilisateur de manière sécurisée.
- * 2.  Implémente une logique "upsert" pour garantir que l'utilisateur existe dans la BDD locale avant de créer la session.
- * 3.  Empêche l'ouverture d'une session si une autre est déjà active sur la même caisse.
+ * 2.  Vérifie que l'utilisateur a un rôle autorisé (caissier ou plus).
+ * 3.  Implémente une logique "upsert" pour garantir que l'utilisateur existe dans la BDD locale.
+ * 4.  Empêche l'ouverture d'une session si une autre est déjà active sur la même caisse.
  */
 export async function POST(request: Request) {
-  // 1. Authentification sécurisée de l'utilisateur.
   const supabase = createRouteHandlerClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
 
-  if (!session) {
-    return new NextResponse(JSON.stringify({ error: 'Non autorisé. Veuillez vous reconnecter.' }), { status: 401 });
-  }
-  const userId = session.user.id;
+  // Define roles that are allowed to open a session
+  const ALLOWED_ROLES: Role[] = [Role.CASHIER, Role.MANAGER, Role.ADMIN, Role.SUPER_ADMIN];
   
-  // 2. [FIX] "Upsert" de l'utilisateur pour garantir son existence dans la base de données.
-  //    Ceci évite les erreurs de clé étrangère pour les nouveaux utilisateurs.
   try {
-    await prisma.user.upsert({
+    // 1. Authenticate the user.
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return new NextResponse(JSON.stringify({ error: 'Non autorisé. Veuillez vous reconnecter.' }), { status: 401 });
+    }
+    const userId = session.user.id;
+    
+    // Upsert user to ensure they exist in the local database.
+    const user = await prisma.user.upsert({
       where: { id: userId },
-      update: {}, // Si l'utilisateur existe, on ne modifie rien.
-      create: {   // S'il n'existe pas, on le crée.
+      update: {}, 
+      create: {
         id: userId,
         email: session.user.email!,
         name: session.user.user_metadata?.full_name ?? session.user.email,
-        // On assigne un rôle par défaut sûr. CASHIER est approprié.
-        role: Role.CASHIER,
+        role: Role.CASHIER, // Assign a safe default role
       }
     });
-  } catch (upsertError) {
-      console.error("[API/SESSIONS] Échec de l'upsert de l'utilisateur :", upsertError);
-      return new NextResponse(JSON.stringify({ error: "Impossible de synchroniser l'utilisateur." }), { status: 500 });
-  }
-  
-  // 3. Logique métier pour l'ouverture de la session.
-  try {
+
+    // 2. Authorize the user based on their role.
+    if (!ALLOWED_ROLES.includes(user.role)) {
+        return new NextResponse(JSON.stringify({ error: 'Accès refusé. Permissions insuffisantes pour ouvrir une session.' }), { status: 403 });
+    }
+    
+    // 3. Proceed with the business logic for opening the session.
     const body = await request.json();
     const { cashRegisterId, openingBalance } = body;
 
@@ -99,7 +101,7 @@ export async function POST(request: Request) {
       return new NextResponse(JSON.stringify({ error: 'Le fonds de caisse doit être un nombre positif.' }), { status: 400 });
     }
     
-    // Vérification pour éviter les sessions multiples sur la même caisse.
+    // Check for existing open sessions on the same register to prevent duplicates.
     const existingOpenSession = await prisma.cashRegisterSession.findFirst({
         where: { cashRegisterId: cashRegisterId, status: CashRegisterSessionStatus.OPEN }
     });
@@ -111,12 +113,12 @@ export async function POST(request: Request) {
         );
     }
 
-    // Création de la session en utilisant l'ID de l'utilisateur authentifié (garanti d'exister).
+    // Create the session using the authenticated user's ID.
     const newSession = await prisma.cashRegisterSession.create({
       data: {
         cashRegisterId,
         openingBalance: balance,
-        openedByUserId: userId, // ✅ Utilisation de l'ID sécurisé de la session.
+        openedByUserId: userId, 
         status: CashRegisterSessionStatus.OPEN,
       },
     });
@@ -125,6 +127,7 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error("Erreur lors de l'ouverture de la session de caisse:", error);
-    return new NextResponse(JSON.stringify({ error: "Impossible d'ouvrir la session de caisse." }), { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : "Erreur interne.";
+    return new NextResponse(JSON.stringify({ error: "Impossible d'ouvrir la session de caisse.", details: errorMessage }), { status: 500 });
   }
 }

@@ -9,6 +9,8 @@ import { PlusCircle, X } from 'lucide-react';
 
 import AddCashRegisterForm from './AddCashRegisterForm'; 
 import CashRegisterList from './CashRegisterList';     
+import OpenSessionModal from './[id]/components/OpenSessionModal';
+import CloseSessionModal from './[id]/components/CloseSessionModal';
 import { CashRegisterType } from '@prisma/client';
 
 // --- INTERFACE (as per plan) ---
@@ -19,6 +21,7 @@ interface CashRegisterWithBalance {
   currentBalance: number;
   session?: {
     id: string;
+    openingBalance: number;
     openedBy?: { name: string | null; email: string; };
     openedAt: string;
   } | null;
@@ -75,13 +78,19 @@ export default function CashRegistersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
+  // --- ✅ NEW: State for modals and API submissions ---
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCloseSessionModalOpen, setIsCloseSessionModalOpen] = useState(false);
+  const [isOpenSessionModalOpen, setIsOpenSessionModalOpen] = useState(false);
+  const [selectedRegister, setSelectedRegister] = useState<CashRegisterWithBalance | null>(null);
+
+
   const fetchRegisters = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/cash-registers');
       if (!response.ok) throw new Error('Network error');
       
-      // ✅ FIX APPLIED HERE: The response is now an object, so we destructure the 'data' property.
       const { data }: { data: CashRegisterWithBalance[] } = await response.json();
       setRegisters(data);
 
@@ -97,10 +106,54 @@ export default function CashRegistersPage() {
     fetchRegisters();
   }, [fetchRegisters]);
   
-  // --- PLACEHOLDER HANDLERS ---
-  // These will be wired up to modals on this page in a future step.
-  const handleOpenSession = (id: string) => { console.log(`TODO: Open session modal for ${id}`); toast.success("Placeholder: Open session modal.") };
-  const handleCloseSession = (id: string) => { console.log(`TODO: Close session modal for ${id}`); toast.success("Placeholder: Close session modal.") };
+  // --- ✅ MODIFIED: Placeholder handlers replaced with functional logic ---
+  const handleOpenSessionModal = (registerId: string) => {
+    const registerToOpen = registers.find(r => r.id === registerId);
+    if (registerToOpen) {
+        setSelectedRegister(registerToOpen);
+        setIsOpenSessionModalOpen(true);
+    }
+  };
+  
+  const handleCloseSessionModal = (registerId: string) => {
+    const registerToClose = registers.find(r => r.id === registerId);
+    if (registerToClose) {
+        setSelectedRegister(registerToClose);
+        setIsCloseSessionModalOpen(true);
+    }
+  };
+
+  const handleOpenSession = async (openingBalance: number) => {
+    if (!selectedRegister) return;
+    setIsSubmitting(true);
+    const promise = fetch(`/api/cash-register-sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cashRegisterId: selectedRegister.id, openingBalance }),
+    }).then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e.error)));
+
+    toast.promise(promise, {
+        loading: 'Opening session...',
+        success: () => { setIsOpenSessionModalOpen(false); fetchRegisters(); return 'Session opened!'; },
+        error: (err) => `Error: ${err}`,
+    }).finally(() => setIsSubmitting(false));
+  };
+  
+  const handleCloseSession = async (payload: { closingBalance: number; createAdjustment: boolean }) => {
+    if (!selectedRegister || !selectedRegister.session) return;
+    setIsSubmitting(true);
+     const promise = fetch(`/api/cash-register-sessions/${selectedRegister.session.id}/close`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    }).then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e.error)));
+
+    toast.promise(promise, {
+        loading: 'Closing session...',
+        success: () => { setIsCloseSessionModalOpen(false); fetchRegisters(); return 'Session closed!'; },
+        error: (err) => `Error: ${err}`,
+    }).finally(() => setIsSubmitting(false));
+  };
   
   return (
     <>
@@ -121,8 +174,8 @@ export default function CashRegistersPage() {
         ) : (
           <CashRegisterList 
             registers={registers}
-            onOpenSession={handleOpenSession}
-            onCloseSession={handleCloseSession}
+            onOpenSession={handleOpenSessionModal}
+            onCloseSession={handleCloseSessionModal}
           />
         )}
       </main>
@@ -133,6 +186,26 @@ export default function CashRegistersPage() {
             onClose={() => setIsDrawerOpen(false)}
           />
       </Drawer>
+
+      {/* --- ✅ NEW: Modals are now included in the page render --- */}
+      {selectedRegister && (
+        <>
+            <OpenSessionModal 
+                isOpen={isOpenSessionModalOpen}
+                onClose={() => setIsOpenSessionModalOpen(false)}
+                onSubmit={handleOpenSession}
+                isSubmitting={isSubmitting}
+            />
+            <CloseSessionModal 
+                isOpen={isCloseSessionModalOpen}
+                onClose={() => setIsCloseSessionModalOpen(false)}
+                onSubmit={handleCloseSession}
+                isSubmitting={isSubmitting}
+                openingBalance={selectedRegister.session?.openingBalance || 0}
+                systemRunningTotal={selectedRegister.currentBalance}
+            />
+        </>
+      )}
     </>
   );
 }

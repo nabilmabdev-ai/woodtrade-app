@@ -127,7 +127,6 @@ export default function ManageRegisterPage() {
       if (!allRegistersRes.ok) throw new Error('Could not load list of all registers.');
       
       const registerData = await registerRes.json();
-      // ✅ FIX APPLIED HERE: Destructure the 'data' property from the paginated response.
       const { data: allRegistersData } = await allRegistersRes.json();
 
       setRegister(registerData);
@@ -195,13 +194,14 @@ export default function ManageRegisterPage() {
   }, [searchQuery, dateFrom, dateTo]);
 
 
-  // --- API HANDLERS (UNCHANGED) ---
+  // --- API HANDLERS ---
   const handleOpenSession = async (openingBalance: number) => {
     setIsSubmitting(true);
-    const promise = fetch(`/api/cash-registers/${cashRegisterId}/open-session`, {
+    // ✅ BUG FIX: Corrected the API endpoint from /open-session to the root sessions endpoint.
+    const promise = fetch(`/api/cash-register-sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ openingBalance }),
+        body: JSON.stringify({ cashRegisterId, openingBalance }),
     }).then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e.error)));
 
     toast.promise(promise, {
@@ -213,7 +213,8 @@ export default function ManageRegisterPage() {
   
   const handleCloseSession = async (payload: { closingBalance: number; createAdjustment: boolean }) => {
     setIsSubmitting(true);
-     const promise = fetch(`/api/cash-registers/${cashRegisterId}/close-session`, {
+     // ✅ BUG FIX: Corrected the API endpoint to match the file-based routing convention.
+     const promise = fetch(`/api/cash-register-sessions/${register?.session?.id}/close`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -221,7 +222,7 @@ export default function ManageRegisterPage() {
 
     toast.promise(promise, {
         loading: 'Closing session...',
-        success: () => { setIsCloseSessionModalOpen(false); fetchRegisterDetails(); return 'Session closed!'; },
+        success: () => { setIsCloseSessionModalOpen(false); fetchRegisterDetails(); fetchMovements(true); return 'Session closed!'; },
         error: (err) => `Error: ${err}`,
     }).finally(() => setIsSubmitting(false));
   };
@@ -241,22 +242,24 @@ export default function ManageRegisterPage() {
     toast.promise(promise, {
         loading: 'Adding movement...',
         success: () => { setIsAddMovementModalOpen(false); fetchMovements(true); fetchRegisterDetails(); return 'Movement added!'; },
-        error: (err) => `Error: ${err}`,
+        error: (err) => `Erreur : ${err}`,
     }).finally(() => setIsSubmitting(false));
   };
   
   const handleTransfer = async (payload: TransferSubmitPayload) => {
     setIsSubmitting(true);
+    // Pass the source register ID in the body for the API route
+    const transferPayload = { ...payload, sourceRegisterId: cashRegisterId };
     const promise = fetch(`/api/cash-registers/${cashRegisterId}/transfer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(transferPayload),
     }).then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e.error)));
     
     toast.promise(promise, {
         loading: 'Processing transfer...',
         success: () => { setIsTransferModalOpen(false); fetchMovements(true); fetchRegisterDetails(); return 'Transfer successful!'; },
-        error: (err) => `Error: ${err}`,
+        error: (err) => `Erreur : ${err}`,
     }).finally(() => setIsSubmitting(false));
   };
 

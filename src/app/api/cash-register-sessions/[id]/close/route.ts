@@ -2,47 +2,57 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { CashRegisterSessionStatus } from '@prisma/client';
+import { CashRegisterSessionStatus, Role, CashMovementType } from '@prisma/client';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 
+/**
+ * Gère la requête POST pour fermer une session de caisse.
+ * ✅ SÉCURITÉ APPLIQUÉE : Seuls les utilisateurs autorisés peuvent fermer une session.
+ */
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   const supabase = createRouteHandlerClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
 
-  if (!session) {
-    return new NextResponse(JSON.stringify({ error: 'Non autorisé' }), { status: 401 });
-  }
+  // Define roles that are allowed to close a session
+  const ALLOWED_ROLES: Role[] = [Role.CASHIER, Role.MANAGER, Role.ADMIN, Role.SUPER_ADMIN];
 
   try {
-    const { id: sessionId } = await context.params;
+    // 1. Authenticate the user
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return new NextResponse(JSON.stringify({ error: 'Non autorisé' }), { status: 401 });
+    }
 
+    // 2. Authorize the user based on their role
+    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+    if (!user || !ALLOWED_ROLES.includes(user.role)) {
+      return new NextResponse(JSON.stringify({ error: 'Accès refusé. Permissions insuffisantes.' }), { status: 403 });
+    }
+
+    // 3. If authorized, proceed with the business logic
+    const { id: sessionId } = await context.params;
     const body = await request.json();
-    const { closingBalance } = body as {
+    const { closingBalance, createAdjustment } = body as {
       closingBalance: number;
+      createAdjustment: boolean;
     };
 
     if (closingBalance === undefined) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Le montant de clôture est requis.' }),
-        { status: 400 }
-      );
+      return new NextResponse(JSON.stringify({ error: 'Le montant de clôture est requis.' }), { status: 400 });
     }
 
     const countedAmount = parseFloat(closingBalance as unknown as string);
     if (isNaN(countedAmount) || countedAmount < 0) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Le montant de clôture doit être un nombre positif.' }),
-        { status: 400 }
-      );
+      return new NextResponse(JSON.stringify({ error: 'Le montant de clôture doit être un nombre positif.' }), { status: 400 });
     }
     
     const closedSession = await prisma.$transaction(async (tx) => {
       const sessionToClose = await tx.cashRegisterSession.findUnique({
         where: { id: sessionId },
+        include: { cashRegister: true }
       });
 
       if (!sessionToClose) {
@@ -89,6 +99,19 @@ export async function POST(
           closedByUserId: session.user.id,
         },
       });
+
+      // If there is a difference and the user wants to create an adjustment
+      if (Math.abs(difference) >= 0.01 && createAdjustment) {
+        await tx.cashMovement.create({
+            data: {
+                sessionId: sessionId,
+                userId: session.user.id,
+                amount: -difference, // We want to add the inverse of the difference to balance it
+                type: CashMovementType.ADJUSTMENT,
+                reason: `Ajustement de clôture (Écart de ${difference.toFixed(2)} MAD)`,
+            }
+        });
+      }
 
       return updatedSession;
     });

@@ -4,8 +4,6 @@ import Link from 'next/link';
 import { CashRegisterType } from '@prisma/client';
 import { MoreVertical } from 'lucide-react';
 
-// --- NEW INTERFACE ---
-// Aligned with the new API expectation from the plan
 interface CashRegisterWithBalance {
   id: string;
   name: string;
@@ -22,36 +20,34 @@ interface CashRegisterListProps {
   registers: CashRegisterWithBalance[];
   onOpenSession: (id: string) => void;
   onCloseSession: (id: string) => void;
-  onAddMovement: (id: string) => void;
-  onTransfer: (id: string) => void;
 }
 
-// --- NEW SUB-COMPONENTS based on the plan ---
 
-// SessionChip Component (as per plan)
+// --- SUB-COMPONENTS with VISUAL REFRESH ---
+
 const SessionChip = ({ session }: { session?: CashRegisterWithBalance['session'] }) => {
   if (!session?.id) {
-    return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-700">Closed</span>;
+    // Styling for 'Closed' state
+    return <span className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-200">Closed</span>;
   }
+  // ✅ NEW classes applied as per plan for 'Open' state
   return (
     <span 
       title={`Opened at ${new Date(session.openedAt).toLocaleString('fr-FR')}`} 
-      className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800"
+      className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-green-50 text-green-700 ring-1 ring-inset ring-green-200"
     >
       Open — {session.openedBy?.name || session.openedBy?.email}
     </span>
   );
 };
 
-// TypeBadge maps the DB enum to the neutral UI label specified in the plan.
 const TypeBadge = ({ type }: { type: CashRegisterType }) => {
     const isSales = type === CashRegisterType.SALES;
     const styles = isSales
       ? 'bg-blue-100 text-blue-800'
       : 'bg-yellow-100 text-yellow-800';
-    // ✅ MODIFIED: Use neutral terms as per plan
     const text = isSales ? 'Register' : 'Expense Register';
-  
+    // This component was already modern, keeping consistent styles.
     return (
       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${styles}`}>
         {text}
@@ -59,25 +55,21 @@ const TypeBadge = ({ type }: { type: CashRegisterType }) => {
     );
 };
 
-// BalanceCard Component (based on plan's skeleton)
 function BalanceCard({ 
   register, 
   onOpen, 
-  onClose, 
-  onAddMovement, 
-  onTransfer 
+  onClose,
 }: { 
   register: CashRegisterWithBalance,
   onOpen: (id: string) => void,
   onClose: (id: string) => void,
-  onAddMovement: (id: string) => void,
-  onTransfer: (id: string) => void
 }) {
   const isSessionOpen = !!register.session?.id;
   const isExpenseRegister = register.type === CashRegisterType.EXPENSE;
 
+  // ✅ NEW classes applied for the main card container
   return (
-    <div className="p-5 rounded-xl shadow-sm bg-white border border-gray-200 flex flex-col justify-between">
+    <div className="p-6 rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 flex flex-col justify-between transition-transform hover:-translate-y-0.5 hover:shadow-md">
       <div>
         <div className="flex justify-between items-start">
           <div>
@@ -89,7 +81,7 @@ function BalanceCard({
                 {register.currentBalance.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} MAD
             </div>
             {!isExpenseRegister && (
-              <div className="mt-1 h-5"> {/* Height placeholder */}
+              <div className="mt-1 h-5"> 
                 <SessionChip session={register.session} />
               </div>
             )}
@@ -97,20 +89,21 @@ function BalanceCard({
         </div>
       </div>
       <div className="mt-6 flex gap-2 items-center">
-        <Link href={`/cash-registers/${register.id}`} className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-md hover:bg-blue-700 flex-grow text-center">
+        {/* ✅ NEW classes applied for the primary 'Manage' button */}
+        <Link href={`/cash-registers/${register.id}`} className="px-5 py-3 text-sm font-semibold bg-blue-600 text-white rounded-xl shadow-sm hover:bg-blue-700 transition flex-grow text-center">
             Manage
         </Link>
         {!isExpenseRegister && (
             isSessionOpen ? (
-                <button onClick={() => onClose(register.id)} className="px-4 py-2 text-sm font-semibold bg-red-50 text-red-700 rounded-md hover:bg-red-100">Close</button>
+                // ✅ NEW classes applied for secondary buttons
+                <button onClick={() => onClose(register.id)} className="px-3 py-2 text-sm font-medium bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition">Close</button>
             ) : (
-                <button onClick={() => onOpen(register.id)} className="px-4 py-2 text-sm font-semibold bg-green-50 text-green-700 rounded-md hover:bg-green-100">Open</button>
+                // ✅ NEW classes applied for secondary buttons
+                <button onClick={() => onOpen(register.id)} className="px-3 py-2 text-sm font-medium bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition">Open</button>
             )
         )}
-         {/* Dropdown for other actions */}
         <div className="relative">
             <button className="p-2 bg-gray-100 rounded-md hover:bg-gray-200"><MoreVertical className="h-5 w-5"/></button>
-            {/* Dropdown menu logic would go here */}
         </div>
       </div>
     </div>
@@ -118,13 +111,11 @@ function BalanceCard({
 }
 
 
-// --- MAIN COMPONENT REFACTORED to use the new card grid ---
+// --- MAIN COMPONENT (unchanged) ---
 export default function CashRegisterList({ 
   registers, 
   onOpenSession, 
   onCloseSession,
-  onAddMovement,
-  onTransfer
 }: CashRegisterListProps) {
   if (registers.length === 0) {
     return (
@@ -143,8 +134,6 @@ export default function CashRegisterList({
           register={register} 
           onOpen={onOpenSession}
           onClose={onCloseSession}
-          onAddMovement={onAddMovement}
-          onTransfer={onTransfer}
         />
       ))}
     </div>

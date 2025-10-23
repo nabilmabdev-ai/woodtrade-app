@@ -76,6 +76,7 @@ export default function MovementModal({ isOpen, onClose, onSubmit, isSubmitting,
 
           <div>
             <label htmlFor="amount" className="block text-sm font-medium text-gray-700">Amount (MAD) *</label>
+            {/* ✅ NEW classes applied for a modern input style */}
             <input
               id="amount"
               type="number"
@@ -85,12 +86,13 @@ export default function MovementModal({ isOpen, onClose, onSubmit, isSubmitting,
               onChange={(e) => setAmount(e.target.value)}
               required
               autoFocus
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="mt-1 block w-full px-4 py-3 rounded-xl ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-300 placeholder-gray-400 focus:outline-none"
             />
           </div>
 
           <div>
             <label htmlFor="reason" className="block text-sm font-medium text-gray-700">Reason *</label>
+            {/* ✅ NEW classes applied for a modern input style */}
             <input
               id="reason"
               type="text"
@@ -98,7 +100,7 @@ export default function MovementModal({ isOpen, onClose, onSubmit, isSubmitting,
               onChange={(e) => setReason(e.target.value)}
               required
               placeholder={type === 'OUT' ? "e.g., Office supplies, petty cash..." : "e.g., Owner contribution, float top-up..."}
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="mt-1 block w-full px-4 py-3 rounded-xl ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-300 placeholder-gray-400 focus:outline-none"
             />
           </div>
 
@@ -118,7 +120,6 @@ export default function MovementModal({ isOpen, onClose, onSubmit, isSubmitting,
                     <label htmlFor="applyToSession" className="font-medium text-gray-700">
                         Apply to current session
                     </label>
-                    {/* ✅ FIXED: Replaced ' isn't ' with ' is not ' to remove the apostrophe */}
                     <p className="text-gray-500">Uncheck this if the movement is not part of the current session&apos;s cash flow.</p>
                 </div>
             </div>

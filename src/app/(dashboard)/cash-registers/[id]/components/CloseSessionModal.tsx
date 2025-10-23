@@ -68,6 +68,7 @@ export default function CloseSessionModal({ isOpen, onClose, onSubmit, isSubmitt
             <label htmlFor="closingBalance" className="block text-sm font-medium text-gray-700">
               Counted Closing Balance (MAD) *
             </label>
+            {/* ✅ NEW classes applied for a modern input style */}
             <input
               id="closingBalance"
               type="number"
@@ -77,7 +78,7 @@ export default function CloseSessionModal({ isOpen, onClose, onSubmit, isSubmitt
               onChange={(e) => setCountedBalance(e.target.value)}
               required
               autoFocus
-              className="mt-1 block w-full p-3 border border-gray-300 rounded-md text-lg focus:ring-blue-500 focus:border-blue-500"
+              className="mt-1 block w-full px-4 py-3 rounded-xl ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-300 placeholder-gray-400 text-lg focus:outline-none"
               placeholder="Enter the exact counted amount"
             />
           </div>

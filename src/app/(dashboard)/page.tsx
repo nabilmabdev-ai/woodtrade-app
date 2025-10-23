@@ -55,7 +55,7 @@ const StatCard = ({ title, value, icon: Icon, color = 'blue' }: { title: string,
 const WelcomeBanner = ({ userName }: { userName: string }) => (
     <div className="mb-8 p-6 bg-blue-600 rounded-lg shadow-lg text-white">
         <h1 className="text-3xl font-bold">Bienvenue, {userName} !</h1>
-        <p className="mt-2 text-blue-100">Voici un aperçu de l&apos;activité de votre entreprise.</p>
+        <p className="mt-2 text-blue-100">Voici un aperçu de l'activité de votre entreprise.</p>
     </div>
 );
 
@@ -136,9 +136,10 @@ export default function DashboardPage() {
             <TrendingUp className="w-6 h-6 mr-3 text-green-500" />
             Top 5 des produits vendus
           </h2>
-          {stats.topSellingProducts.length > 0 ? (
+          {/* ✅ FIX APPLIED HERE: Fallback to empty array `[]` if topSellingProducts is null/undefined */}
+          {(stats.topSellingProducts || []).length > 0 ? (
             <ul className="space-y-3">
-              {stats.topSellingProducts.map((product, index) => (
+              {(stats.topSellingProducts || []).map((product, index) => (
                 <li key={index} className="flex justify-between items-center py-2 border-b last:border-b-0">
                   <span className="font-medium text-gray-700">{product.name}</span>
                   <span className="font-bold text-lg text-blue-600">{product.totalSold} vendus</span>
@@ -155,9 +156,10 @@ export default function DashboardPage() {
             <TriangleAlert className="w-6 h-6 mr-3 text-red-500" />
             Alertes de stock bas
           </h2>
-          {stats.lowStockProducts.length > 0 ? (
+          {/* ✅ FIX APPLIED HERE: Fallback to empty array `[]` if lowStockProducts is null/undefined */}
+          {(stats.lowStockProducts || []).length > 0 ? (
             <ul className="space-y-3">
-              {stats.lowStockProducts.map((item, index) => (
+              {(stats.lowStockProducts || []).map((item, index) => (
                 <li key={index} className="flex justify-between items-center py-2 border-b last:border-b-0">
                   <span className="font-medium text-gray-700">{item.productVariant.product.name}</span>
                   <span className="font-bold text-lg text-red-600">{item.quantity} restants</span>

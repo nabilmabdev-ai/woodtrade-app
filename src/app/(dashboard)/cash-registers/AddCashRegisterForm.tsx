@@ -8,7 +8,6 @@ import { CashRegisterType } from '@prisma/client';
 
 interface AddCashRegisterFormProps {
   onRegisterAdded: () => void;
-  // Prop to close the drawer/modal from the parent
   onClose?: () => void;
 }
 
@@ -32,7 +31,7 @@ export default function AddCashRegisterForm({ onRegisterAdded, onClose }: AddCas
         setLocation('');
         setType(CashRegisterType.SALES);
         onRegisterAdded();
-        if (onClose) onClose(); // Close the drawer on success
+        if (onClose) onClose();
         return 'Register added successfully!';
       } else {
         const errorData = await response.json();
@@ -50,11 +49,11 @@ export default function AddCashRegisterForm({ onRegisterAdded, onClose }: AddCas
   };
 
   return (
-    // The form is now self-contained, ready to be placed in a drawer/modal.
     <form onSubmit={handleSubmit} className="flex flex-col h-full p-6 space-y-6">
       <div className="flex-1 space-y-4">
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700">Register Name (unique) *</label>
+          {/* ✅ NEW classes applied for input fields */}
           <input
             id="name"
             type="text"
@@ -62,20 +61,20 @@ export default function AddCashRegisterForm({ onRegisterAdded, onClose }: AddCas
             onChange={(e) => setName(e.target.value)}
             required
             placeholder="e.g., Main Register"
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-300 focus:outline-none placeholder-gray-400"
           />
         </div>
 
         <div>
           <label htmlFor="type" className="block text-sm font-medium text-gray-700">Register Type *</label>
+          {/* ✅ NEW classes applied for select fields */}
           <select
             id="type"
             value={type}
             onChange={(e) => setType(e.target.value as CashRegisterType)}
             required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+            className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-300 focus:outline-none bg-white"
           >
-            {/* ✅ MODIFIED according to plan: Neutral microcopy */}
             <option value={CashRegisterType.SALES}>Register</option>
             <option value={CashRegisterType.EXPENSE}>Expense Register</option>
           </select>
@@ -83,13 +82,14 @@ export default function AddCashRegisterForm({ onRegisterAdded, onClose }: AddCas
 
         <div>
           <label htmlFor="location" className="block text-sm font-medium text-gray-700">Location (Optional)</label>
+          {/* ✅ NEW classes applied for input fields */}
           <input
             id="location"
             type="text"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="e.g., Front Desk"
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-300 focus:outline-none placeholder-gray-400"
           />
         </div>
       </div>

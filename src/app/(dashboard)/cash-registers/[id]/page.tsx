@@ -12,7 +12,8 @@ import { Plus, ArrowRightLeft, Lock, Unlock } from 'lucide-react';
 import OpenSessionModal from './components/OpenSessionModal';
 import CloseSessionModal from './components/CloseSessionModal';
 import MovementModal, { MovementSubmitPayload } from './components/MovementModal';
-import TransferModal, { TransferSubmitPayload } from './components/TransferModal'; // <-- NEW IMPORT
+import TransferModal, { TransferSubmitPayload } from './components/TransferModal';
+import FilterBar from '@/components/FilterBar'; 
 
 // --- INTERFACES ---
 interface RegisterDetails {
@@ -95,32 +96,41 @@ export default function ManageRegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // --- MODAL STATES (unchanged) ---
   const [isAddMovementModalOpen, setIsAddMovementModalOpen] = useState(false);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [isOpenSessionModalOpen, setIsOpenSessionModalOpen] = useState(false);
   const [isCloseSessionModalOpen, setIsCloseSessionModalOpen] = useState(false);
+  
+  // --- STATE FOR FILTERS & PAGINATION ---
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [offset, setOffset] = useState(0);
+  const [limit] = useState(20);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const fetchAllData = useCallback(async () => {
+
+  // Fetch static details (register info, list of all registers)
+  const fetchRegisterDetails = useCallback(async () => {
     if (!cashRegisterId) return;
     setLoading(true);
     setError(null);
     try {
-      const [registerRes, movementsRes, allRegistersRes] = await Promise.all([
+      const [registerRes, allRegistersRes] = await Promise.all([
         fetch(`/api/cash-registers/${cashRegisterId}`),
-        fetch(`/api/cash-registers/${cashRegisterId}/movements?limit=20`),
-        fetch(`/api/cash-registers`) // <-- NEW: Fetch all registers for the transfer modal
+        fetch(`/api/cash-registers`)
       ]);
 
       if (!registerRes.ok) throw new Error('Register not found.');
-      if (!movementsRes.ok) throw new Error('Could not load movements.');
       if (!allRegistersRes.ok) throw new Error('Could not load list of all registers.');
       
       const registerData = await registerRes.json();
-      const movementsData = await movementsRes.json();
-      const allRegistersData = await allRegistersRes.json();
+      // ✅ FIX APPLIED HERE: Destructure the 'data' property from the paginated response.
+      const { data: allRegistersData } = await allRegistersRes.json();
 
       setRegister(registerData);
-      setMovements(movementsData);
       setAllRegisters(allRegistersData);
 
     } catch (err) {
@@ -132,10 +142,60 @@ export default function ManageRegisterPage() {
     }
   }, [cashRegisterId]);
 
-  useEffect(() => {
-    fetchAllData();
-  }, [fetchAllData]);
+  // Fetch movements with pagination and filters
+  const fetchMovements = useCallback(async (reset = false) => {
+    if (isLoadingMore || !cashRegisterId) return;
 
+    const currentOffset = reset ? 0 : offset;
+    if (reset) {
+        setLoading(true);
+    } else {
+        setIsLoadingMore(true);
+    }
+    
+    try {
+        const params = new URLSearchParams({
+            limit: String(limit),
+            offset: String(currentOffset),
+            search: searchQuery,
+            from: dateFrom,
+            to: dateTo,
+        });
+        const response = await fetch(`/api/cash-registers/${cashRegisterId}/movements?${params.toString()}`);
+        if (!response.ok) throw new Error('Could not load movements.');
+        
+        const { data, meta } = await response.json();
+        
+        setMovements(prev => reset ? data : [...prev, ...data]);
+        const newOffset = currentOffset + data.length;
+        setOffset(newOffset);
+        setHasMore(newOffset < meta.total);
+
+    } catch (err) {
+        const error = err as Error;
+        toast.error(error.message);
+    } finally {
+        setLoading(false);
+        setIsLoadingMore(false);
+    }
+  }, [cashRegisterId, limit, offset, searchQuery, dateFrom, dateTo, isLoadingMore]);
+  
+  // Initial fetch for static data
+  useEffect(() => {
+    fetchRegisterDetails();
+  }, [fetchRegisterDetails]);
+
+  // Fetch movements when filters change
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      fetchMovements(true);
+    }, 300);
+    return () => clearTimeout(handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, dateFrom, dateTo]);
+
+
+  // --- API HANDLERS (UNCHANGED) ---
   const handleOpenSession = async (openingBalance: number) => {
     setIsSubmitting(true);
     const promise = fetch(`/api/cash-registers/${cashRegisterId}/open-session`, {
@@ -146,7 +206,7 @@ export default function ManageRegisterPage() {
 
     toast.promise(promise, {
         loading: 'Opening session...',
-        success: () => { setIsOpenSessionModalOpen(false); fetchAllData(); return 'Session opened!'; },
+        success: () => { setIsOpenSessionModalOpen(false); fetchRegisterDetails(); return 'Session opened!'; },
         error: (err) => `Error: ${err}`,
     }).finally(() => setIsSubmitting(false));
   };
@@ -161,7 +221,7 @@ export default function ManageRegisterPage() {
 
     toast.promise(promise, {
         loading: 'Closing session...',
-        success: () => { setIsCloseSessionModalOpen(false); fetchAllData(); return 'Session closed!'; },
+        success: () => { setIsCloseSessionModalOpen(false); fetchRegisterDetails(); return 'Session closed!'; },
         error: (err) => `Error: ${err}`,
     }).finally(() => setIsSubmitting(false));
   };
@@ -180,12 +240,11 @@ export default function ManageRegisterPage() {
 
     toast.promise(promise, {
         loading: 'Adding movement...',
-        success: () => { setIsAddMovementModalOpen(false); fetchAllData(); return 'Movement added!'; },
+        success: () => { setIsAddMovementModalOpen(false); fetchMovements(true); fetchRegisterDetails(); return 'Movement added!'; },
         error: (err) => `Error: ${err}`,
     }).finally(() => setIsSubmitting(false));
   };
   
-  // --- NEW: API Handler for Transferring Funds ---
   const handleTransfer = async (payload: TransferSubmitPayload) => {
     setIsSubmitting(true);
     const promise = fetch(`/api/cash-registers/${cashRegisterId}/transfer`, {
@@ -196,13 +255,13 @@ export default function ManageRegisterPage() {
     
     toast.promise(promise, {
         loading: 'Processing transfer...',
-        success: () => { setIsTransferModalOpen(false); fetchAllData(); return 'Transfer successful!'; },
+        success: () => { setIsTransferModalOpen(false); fetchMovements(true); fetchRegisterDetails(); return 'Transfer successful!'; },
         error: (err) => `Error: ${err}`,
     }).finally(() => setIsSubmitting(false));
   };
 
 
-  if (loading) return <p className="p-8 text-center">Loading register details...</p>;
+  if (loading && !register) return <p className="p-8 text-center">Loading register details...</p>;
   if (error) return <p className="p-8 text-center text-red-500">Error: {error}</p>;
   if (!register) return null;
 
@@ -212,7 +271,6 @@ export default function ManageRegisterPage() {
   return (
     <>
       <main className="p-8 bg-gray-50 min-h-full">
-        {/* Header and Summary (No changes here) */}
         <div className="mb-6"><Link href="/cash-registers" className="text-blue-600 hover:underline">&larr; Back to all registers</Link></div>
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <div className="flex justify-between items-start">
@@ -225,15 +283,42 @@ export default function ManageRegisterPage() {
                 {!isExpenseRegister && (isSessionOpen ? (<button onClick={() => setIsCloseSessionModalOpen(true)} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 ml-auto"><Lock className="h-5 w-5" /> Close Session</button>) : (<button onClick={() => setIsOpenSessionModalOpen(true)} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 ml-auto"><Unlock className="h-5 w-5" /> Open Session</button>))}
             </div>
         </div>
-        {/* Movements List (No changes here) */}
-        <div className="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <div className="flex justify-between items-center mb-4"><h2 className="text-xl font-semibold">Movements</h2><div className="flex items-center gap-2"><button className="px-3 py-1 text-sm font-medium bg-blue-100 text-blue-700 rounded-full">All</button></div></div>
-            <ul className="divide-y divide-gray-200">{movements.length > 0 ? (movements.map(m => <MovementItem key={m.id} movement={m} />)) : (<p className="text-center text-gray-500 py-8">No movements recorded.</p>)}</ul>
-            {movements.length > 19 && (<div className="mt-4 text-center"><button className="text-sm font-semibold text-blue-600 hover:underline">Load more</button></div>)}
+        
+        <div className="mt-8">
+            <FilterBar
+                search={searchQuery}
+                onSearch={setSearchQuery}
+                from={dateFrom}
+                to={dateTo}
+                onDateChange={(from, to) => { setDateFrom(from); setDateTo(to); }}
+                onClear={() => { setSearchQuery(''); setDateFrom(''); setDateTo(''); }}
+            />
+        </div>
+        <div className="mt-4 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <h2 className="text-xl font-semibold mb-4">Movements</h2>
+            {loading && movements.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">Loading movements...</p>
+            ) : (
+                <>
+                    <ul className="divide-y divide-gray-200">
+                        {movements.length > 0 ? (
+                            movements.map(m => <MovementItem key={m.id} movement={m} />)
+                        ) : (
+                            <p className="text-center text-gray-500 py-8">No movements match the current filters.</p>
+                        )}
+                    </ul>
+                    {hasMore && (
+                        <div className="mt-6 text-center">
+                            <button onClick={() => fetchMovements(false)} disabled={isLoadingMore} className="text-sm font-semibold text-blue-600 hover:underline disabled:text-gray-400">
+                                {isLoadingMore ? 'Loading...' : 'Load more'}
+                            </button>
+                        </div>
+                    )}
+                </>
+            )}
         </div>
       </main>
 
-      {/* --- RENDER ALL MODALS --- */}
       <OpenSessionModal isOpen={isOpenSessionModalOpen} onClose={() => setIsOpenSessionModalOpen(false)} onSubmit={handleOpenSession} isSubmitting={isSubmitting}/>
       <CloseSessionModal isOpen={isCloseSessionModalOpen} onClose={() => setIsCloseSessionModalOpen(false)} onSubmit={handleCloseSession} isSubmitting={isSubmitting} openingBalance={register.session?.openingBalance || 0} systemRunningTotal={register.currentBalance}/>
       <MovementModal isOpen={isAddMovementModalOpen} onClose={() => setIsAddMovementModalOpen(false)} onSubmit={handleAddMovement} isSubmitting={isSubmitting} isSessionActive={isSessionOpen}/>

@@ -2,21 +2,98 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-// ✅ NOUVEAU : Importer le type depuis Prisma Client pour la validation.
-import { CashRegisterType } from '@prisma/client';
+import { CashRegisterType, CashRegisterSessionStatus, Prisma } from '@prisma/client';
 
 /**
- * Gère la requête GET pour récupérer toutes les caisses enregistreuses.
- * (Cette fonction reste inchangée).
+ * Gère la requête GET pour récupérer les caisses enregistreuses,
+ * avec support pour la pagination, la recherche et le filtrage par type.
  */
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+
+  // --- NEW: Retrieve query parameters for filtering and pagination ---
+  const limit = parseInt(searchParams.get('limit') || '20', 10);
+  const offset = parseInt(searchParams.get('offset') || '0', 10);
+  const search = searchParams.get('search') || '';
+  const type = searchParams.get('type');
+
   try {
-    const cashRegisters = await prisma.cashRegister.findMany({
-      orderBy: {
-        name: 'asc',
-      },
+    const where: Prisma.CashRegisterWhereInput = {};
+
+    if (search) {
+      where.name = {
+        contains: search,
+        mode: 'insensitive',
+      };
+    }
+
+    if (type && Object.values(CashRegisterType).includes(type as CashRegisterType)) {
+      where.type = type as CashRegisterType;
+    }
+    
+    // Fetch registers and total count in parallel for efficiency
+    const [cashRegisters, total] = await prisma.$transaction([
+        prisma.cashRegister.findMany({
+            where,
+            orderBy: { name: 'asc' },
+            take: limit,
+            skip: offset,
+        }),
+        prisma.cashRegister.count({ where }),
+    ]);
+
+    const registersWithDetails = await Promise.all(
+      cashRegisters.map(async (register) => {
+        // This logic remains the same: calculate balance and find active session
+        const balanceResult = await prisma.cashMovement.aggregate({
+          where: {
+            OR: [
+              { cashRegisterId: register.id },
+              { session: { cashRegisterId: register.id } },
+            ],
+          },
+          _sum: { amount: true },
+        });
+        const currentBalance = balanceResult._sum.amount || 0;
+
+        let activeSession = null;
+        if (register.type === 'SALES') {
+           activeSession = await prisma.cashRegisterSession.findFirst({
+            where: {
+              cashRegisterId: register.id,
+              status: CashRegisterSessionStatus.OPEN,
+            },
+            include: {
+              openedByUser: { select: { name: true, email: true } },
+            },
+          });
+        }
+        
+        return {
+          id: register.id,
+          name: register.name,
+          type: register.type,
+          currentBalance: currentBalance,
+          session: activeSession ? {
+            id: activeSession.id,
+            openingBalance: activeSession.openingBalance,
+            openedBy: activeSession.openedByUser,
+            openedAt: activeSession.openedAt.toISOString(),
+          } : null,
+        };
+      })
+    );
+    
+    // Return data with pagination metadata
+    return NextResponse.json({
+        data: registersWithDetails,
+        meta: {
+            limit,
+            offset,
+            total,
+        },
     });
-    return NextResponse.json(cashRegisters);
+
   } catch (error) {
     console.error('Erreur lors de la récupération des caisses:', error);
     const errorMessage = error instanceof Error ? error.message : "Erreur interne.";
@@ -27,12 +104,9 @@ export async function GET() {
   }
 }
 
+
 /**
- * Gère la requête POST pour créer une nouvelle caisse enregistreuse.
- *
- * ✅ VALIDATION AMÉLIORÉE :
- * Vérifie que le `type` fourni dans la requête correspond bien à une des valeurs
- * de l'enum `CashRegisterType` (`SALES` ou `EXPENSE`) avant l'insertion en BDD.
+ * POST function remains unchanged.
  */
 export async function POST(request: Request) {
   try {
@@ -40,43 +114,24 @@ export async function POST(request: Request) {
     const { name, location, type } = body as { name: string, location?: string, type: CashRegisterType };
 
     if (!name || !type) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Le nom et le type de la caisse sont requis' }),
-        { status: 400 }
-      );
+      return new NextResponse(JSON.stringify({ error: 'Le nom et le type sont requis' }), { status: 400 });
     }
     
-    // --- ✅ FIX APPLIED HERE ---
-    // This validation ensures that the provided 'type' is a valid member of the CashRegisterType enum.
     if (!Object.values(CashRegisterType).includes(type)) {
-        return new NextResponse(
-            JSON.stringify({ error: `Le type de caisse '${type}' n'est pas valide.` }),
-            { status: 400 }
-        );
+        return new NextResponse(JSON.stringify({ error: `Le type '${type}' n'est pas valide.` }), { status: 400 });
     }
 
     const newCashRegister = await prisma.cashRegister.create({
-      data: {
-        name,
-        location,
-        type, // Le type est maintenant validé et sûr à insérer.
-      },
+      data: { name, location, type },
     });
 
     return NextResponse.json(newCashRegister, { status: 201 });
   } catch (error) {
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
-      return new NextResponse(
-        JSON.stringify({ error: 'Une caisse avec ce nom existe déjà' }),
-        { status: 409 }
-      );
+      return new NextResponse(JSON.stringify({ error: 'Une caisse avec ce nom existe déjà' }), { status: 409 });
     }
-
     console.error('Erreur lors de la création de la caisse:', error);
     const errorMessage = error instanceof Error ? error.message : "Erreur interne.";
-    return new NextResponse(
-      JSON.stringify({ error: 'Impossible de créer la caisse', details: errorMessage }),
-      { status: 500 }
-    );
+    return new NextResponse(JSON.stringify({ error: 'Impossible de créer la caisse', details: errorMessage }), { status: 500 });
   }
 }

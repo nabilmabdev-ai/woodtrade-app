@@ -79,12 +79,13 @@ export default function TransferModal({ isOpen, onClose, onSubmit, isSubmitting,
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="destination" className="block text-sm font-medium text-gray-700">Destination Register *</label>
+            {/* ✅ NEW classes applied for a modern select style */}
             <select
               id="destination"
               value={destinationId}
               onChange={(e) => setDestinationId(e.target.value)}
               required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-blue-500 focus:border-blue-500"
+              className="mt-1 block w-full px-4 py-3 rounded-xl ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-300 bg-white focus:outline-none"
             >
               {availableDestinations.length > 0 ? (
                 availableDestinations.map(r => <option key={r.id} value={r.id}>{r.name}</option>)
@@ -96,6 +97,7 @@ export default function TransferModal({ isOpen, onClose, onSubmit, isSubmitting,
 
           <div>
             <label htmlFor="amount" className="block text-sm font-medium text-gray-700">Amount to Transfer (MAD) *</label>
+            {/* ✅ NEW classes applied for a modern input style */}
             <input
               id="amount"
               type="number"
@@ -105,12 +107,13 @@ export default function TransferModal({ isOpen, onClose, onSubmit, isSubmitting,
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="mt-1 block w-full px-4 py-3 rounded-xl ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-300 placeholder-gray-400 focus:outline-none"
             />
           </div>
 
           <div>
             <label htmlFor="reason" className="block text-sm font-medium text-gray-700">Reason *</label>
+            {/* ✅ NEW classes applied for a modern input style */}
             <input
               id="reason"
               type="text"
@@ -118,7 +121,7 @@ export default function TransferModal({ isOpen, onClose, onSubmit, isSubmitting,
               onChange={(e) => setReason(e.target.value)}
               required
               placeholder="e.g., Balancing registers, end of day..."
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="mt-1 block w-full px-4 py-3 rounded-xl ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-300 placeholder-gray-400 focus:outline-none"
             />
           </div>
 

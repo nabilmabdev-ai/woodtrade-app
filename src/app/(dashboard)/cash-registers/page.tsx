@@ -11,8 +11,7 @@ import AddCashRegisterForm from './AddCashRegisterForm';
 import CashRegisterList from './CashRegisterList';     
 import { CashRegisterType } from '@prisma/client';
 
-// --- NEW INTERFACE ---
-// Aligned with the new API expectation from the plan
+// --- INTERFACE (as per plan) ---
 interface CashRegisterWithBalance {
   id: string;
   name: string;
@@ -25,8 +24,7 @@ interface CashRegisterWithBalance {
   } | null;
 }
 
-// --- NEW COMPONENT ---
-// A simple Drawer component to host the form, as per the plan
+// --- DRAWER COMPONENT (as per plan) ---
 const Drawer = ({ isOpen, onClose, title, children }: { isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode }) => {
     return (
         <Transition show={isOpen} as={Fragment}>
@@ -80,11 +78,13 @@ export default function CashRegistersPage() {
   const fetchRegisters = useCallback(async () => {
     setIsLoading(true);
     try {
-      // This API endpoint is now expected to return the new data structure
       const response = await fetch('/api/cash-registers');
       if (!response.ok) throw new Error('Network error');
-      const data: CashRegisterWithBalance[] = await response.json();
+      
+      // ✅ FIX APPLIED HERE: The response is now an object, so we destructure the 'data' property.
+      const { data }: { data: CashRegisterWithBalance[] } = await response.json();
       setRegisters(data);
+
     } catch (error) {
       const err = error as Error;
       toast.error(`Could not load registers: ${err.message}`);
@@ -98,12 +98,10 @@ export default function CashRegistersPage() {
   }, [fetchRegisters]);
   
   // --- PLACEHOLDER HANDLERS ---
-  // These will be wired up to modals in subsequent steps.
+  // These will be wired up to modals on this page in a future step.
   const handleOpenSession = (id: string) => { console.log(`TODO: Open session modal for ${id}`); toast.success("Placeholder: Open session modal.") };
   const handleCloseSession = (id: string) => { console.log(`TODO: Close session modal for ${id}`); toast.success("Placeholder: Close session modal.") };
-  const handleAddMovement = (id: string) => { console.log(`TODO: Add movement modal for ${id}`); toast.success("Placeholder: Add movement modal.") };
-  const handleTransfer = (id: string) => { console.log(`TODO: Transfer modal for ${id}`); toast.success("Placeholder: Transfer modal.") };
-
+  
   return (
     <>
       <main className="p-8">
@@ -125,8 +123,6 @@ export default function CashRegistersPage() {
             registers={registers}
             onOpenSession={handleOpenSession}
             onCloseSession={handleCloseSession}
-            onAddMovement={handleAddMovement}
-            onTransfer={handleTransfer}
           />
         )}
       </main>

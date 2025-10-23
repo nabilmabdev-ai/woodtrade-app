@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { getSupabase } from '@/lib/supabase-browser'; // ✅ CORRECTION: Import getSupabase function
+import { getSupabase } from '@/lib/supabase-browser';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { Role } from '@prisma/client';
 
@@ -16,7 +16,6 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // ✅ CORRECTION: Get the Supabase client instance by calling the function
     const supabase = getSupabase();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(

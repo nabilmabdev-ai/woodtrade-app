@@ -12,10 +12,10 @@ import { Role } from '@prisma/client';
  */
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> } // ✅ Compatible avec Next.js 15
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params; // ✅ L'utilisation de 'await' est la pratique recommandée.
+    const { id } = await context.params;
     const user = await prisma.user.findUnique({
       where: { id },
     });
@@ -44,10 +44,10 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> } // ✅ Compatible avec Next.js 15
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params; // ✅ Await
+    const { id } = await context.params;
     const body = await request.json();
     const { role } = body as { role: Role };
 
@@ -64,7 +64,7 @@ export async function PUT(
     });
 
     return NextResponse.json(updatedUser);
-  } catch (error: unknown) { // ✅ Correction ESLint: Utilisation de 'unknown' au lieu de 'any'
+  } catch (error: unknown) {
     console.error("❌ Erreur lors de la mise à jour de l'utilisateur :", error);
 
     if (

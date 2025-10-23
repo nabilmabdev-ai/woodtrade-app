@@ -4,7 +4,9 @@
 
 import { useState, FormEvent } from 'react';
 import toast from 'react-hot-toast';
-import { CashRegisterType } from '@prisma/client';
+import { CashRegisterType, Role } from '@prisma/client';
+import { useAuth } from '@/src/app/auth/provider';
+import * as permissions from '@/src/lib/permissions';
 
 interface AddCashRegisterFormProps {
   onRegisterAdded: () => void;
@@ -12,6 +14,9 @@ interface AddCashRegisterFormProps {
 }
 
 export default function AddCashRegisterForm({ onRegisterAdded, onClose }: AddCashRegisterFormProps) {
+  const { user } = useAuth();
+  const userRole = user?.role as Role;
+
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [type, setType] = useState<CashRegisterType>(CashRegisterType.SALES);
@@ -47,6 +52,15 @@ export default function AddCashRegisterForm({ onRegisterAdded, onClose }: AddCas
         setIsSubmitting(false);
     });
   };
+
+  // Visible only to SUPER_ADMIN or ADMIN
+  if (!userRole || !permissions.canAddCashRegister(userRole)) {
+    return (
+      <div className="p-6 text-center text-red-600">
+        <p>Vous n'avez pas la permission d'ajouter une caisse.</p>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col h-full p-6 space-y-6">

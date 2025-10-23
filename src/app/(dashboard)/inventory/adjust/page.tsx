@@ -5,6 +5,9 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/src/app/auth/provider';
+import * as permissions from '@/src/lib/permissions';
+import { Role } from '@prisma/client';
 
 // --- ✅ INTERFACES AJOUTÉES POUR LA SÉCURITÉ DE TYPE ---
 // Interface pour les variantes de produit une fois aplaties pour la liste déroulante.
@@ -23,6 +26,8 @@ interface ProductWithVariants {
 
 export default function AdjustInventoryPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const userRole = user?.role as Role;
 
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
@@ -84,6 +89,23 @@ export default function AdjustInventoryPage() {
       error: (err) => `Erreur: ${err}`,
     });
   };
+
+  if (!userRole) {
+    return <p className="p-8 text-center">Chargement...</p>;
+  }
+
+  // Visible only to authorized roles
+  if (!permissions.canManageWarehouse(userRole)) {
+    return (
+      <main className="p-8 text-center">
+        <h1 className="text-2xl font-bold text-red-600">Accès non autorisé</h1>
+        <p className="mt-2">Vous n'avez pas la permission de voir cette page.</p>
+        <Link href="/inventory" className="mt-4 inline-block text-blue-600 hover:underline">
+          Retour à l'inventaire
+        </Link>
+      </main>
+    );
+  }
 
   return (
     <main className="p-8">

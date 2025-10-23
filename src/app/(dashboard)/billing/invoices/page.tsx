@@ -2,8 +2,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { InvoiceStatus } from '@prisma/client';
+import { InvoiceStatus, Role } from '@prisma/client';
 import { CURRENCY_LABEL } from '@/lib/constants';
+import { useAuth } from '@/src/app/auth/provider';
+import * as permissions from '@/src/lib/permissions';
+import Link from 'next/link';
 
 // --- Définition du type pour une facture dans la liste ---
 interface InvoiceListItem {
@@ -34,6 +37,9 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 export default function InvoicesPage() {
+  const { user } = useAuth();
+  const userRole = user?.role as Role;
+
   const [invoices, setInvoices] = useState<InvoiceListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +91,12 @@ export default function InvoicesPage() {
     <main className="p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Factures</h1>
+        {/* Visible only to ADMIN or MANAGER */}
+        {userRole && permissions.canCreateInvoices(userRole) && (
+          <Link href="/billing/invoices/new" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+            + Nouvelle Facture
+          </Link>
+        )}
       </div>
 
       {/* --- SECTION DES FILTRES AJOUTÉE --- */}

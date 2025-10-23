@@ -1,8 +1,10 @@
 // src/app/(dashboard)/cash-registers/CashRegisterList.tsx
 
 import Link from 'next/link';
-import { CashRegisterType } from '@prisma/client';
+import { CashRegisterType, Role } from '@prisma/client';
 import { MoreVertical } from 'lucide-react';
+import { useAuth } from '@/src/app/auth/provider';
+import * as permissions from '@/src/lib/permissions';
 
 interface CashRegisterWithBalance {
   id: string;
@@ -64,6 +66,9 @@ function BalanceCard({
   onOpen: (id: string) => void,
   onClose: (id: string) => void,
 }) {
+  const { user } = useAuth();
+  const userRole = user?.role as Role;
+
   const isSessionOpen = !!register.session?.id;
   const isExpenseRegister = register.type === CashRegisterType.EXPENSE;
 
@@ -93,7 +98,8 @@ function BalanceCard({
         <Link href={`/cash-registers/${register.id}`} className="px-5 py-3 text-sm font-semibold bg-blue-600 text-white rounded-xl shadow-sm hover:bg-blue-700 transition flex-grow text-center">
             Manage
         </Link>
-        {!isExpenseRegister && (
+        {/* Visible only to authorized roles */}
+        {userRole && permissions.canManageCashRegisterSession(userRole) && !isExpenseRegister && (
             isSessionOpen ? (
                 // ✅ NEW classes applied for secondary buttons
                 <button onClick={() => onClose(register.id)} className="px-3 py-2 text-sm font-medium bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition">Close</button>

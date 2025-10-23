@@ -5,6 +5,9 @@ import { useState, useEffect, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import SearchableDropdown, { DropdownItem } from '@/components/SearchableDropdown';
 import { CURRENCY_LABEL } from '@/lib/constants';
+import { useAuth } from '@/src/app/auth/provider';
+import * as permissions from '@/src/lib/permissions';
+import { Role } from '@prisma/client';
 
 // --- INTERFACES ---
 
@@ -38,6 +41,9 @@ interface UnpaidInvoice {
 }
 
 export default function CustomerReconciliationPage() {
+  const { user } = useAuth();
+  const userRole = user?.role as Role;
+
   // --- STATE MANAGEMENT ---
   const [customers, setCustomers] = useState<DropdownItem[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<DropdownItem | null>(null);
@@ -157,6 +163,20 @@ export default function CustomerReconciliationPage() {
   }, [invoices, selectedInvoiceIds, selectedSource]);
 
   // --- RENDER ---
+  if (!userRole) {
+    return <p className="p-8 text-center">Chargement...</p>;
+  }
+
+  // Visible only to authorized roles
+  if (!permissions.canViewReconciliation(userRole)) {
+    return (
+      <main className="p-8 text-center">
+        <h1 className="text-2xl font-bold text-red-600">Accès non autorisé</h1>
+        <p className="mt-2">Vous n'avez pas la permission de voir cette page.</p>
+      </main>
+    );
+  }
+
   return (
     <main className="p-8">
       <h1 className="text-3xl font-bold mb-6">Rapprochement Client</h1>

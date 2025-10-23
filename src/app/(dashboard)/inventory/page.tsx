@@ -3,6 +3,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/src/app/auth/provider';
+import * as permissions from '@/src/lib/permissions';
+import { Role } from '@prisma/client';
 
 interface InventoryItem {
   id: string;
@@ -20,9 +23,26 @@ interface InventoryItem {
 }
 
 export default function InventoryPage() {
+  const { user } = useAuth();
+  const userRole = user?.role as Role;
+
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  if (!userRole) {
+    return <p className="p-8 text-center">Chargement...</p>;
+  }
+
+  // Visible only to authorized roles
+  if (!permissions.canManageWarehouse(userRole)) {
+    return (
+      <main className="p-8 text-center">
+        <h1 className="text-2xl font-bold text-red-600">Accès non autorisé</h1>
+        <p className="mt-2">Vous n'avez pas la permission de voir cette page.</p>
+      </main>
+    );
+  }
 
   useEffect(() => {
     const fetchInventory = async () => {
@@ -55,12 +75,15 @@ export default function InventoryPage() {
       <div className="flex justify-between items-center mb-6">
         {/* --- ✅ CORRECTION APPLIQUÉE ICI (apostrophe) --- */}
         <h1 className="text-3xl font-bold">Gestion de l&apos;Inventaire</h1>
-        <Link
-          href="/inventory/adjust"
-          className="px-4 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700"
-        >
-          + Nouvel Ajustement
-        </Link>
+        {/* Visible only to authorized roles */}
+        {userRole && permissions.canManageWarehouse(userRole) && (
+          <Link
+            href="/inventory/adjust"
+            className="px-4 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700"
+          >
+            + Nouvel Ajustement
+          </Link>
+        )}
       </div>
 
       <div className="border rounded-lg overflow-hidden shadow-sm">

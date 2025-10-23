@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { SupplierInvoiceStatus, SupplierPaymentStatus } from '@prisma/client';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 interface SettlePayload {
   paymentId: string;
@@ -43,7 +44,7 @@ export async function POST(
       const remainingDueInCents = invoiceTotalInCents - totalAllocatedInCents;
 
       if (amountToAllocateInCents > remainingDueInCents) {
-        throw new Error(`Le montant à affecter (${(amountToAllocateInCents / 100).toFixed(2)}€) dépasse le solde dû (${(remainingDueInCents / 100).toFixed(2)}€).`);
+        throw new Error(`Le montant à affecter (${(amountToAllocateInCents / 100).toFixed(2)})${CURRENCY_LABEL} dépasse le solde dû (${(remainingDueInCents / 100).toFixed(2)})${CURRENCY_LABEL}.`);
       }
 
       // 2. Vérifier le paiement source et son solde disponible en centimes.
@@ -57,7 +58,7 @@ export async function POST(
       const paymentRemainingInCents = paymentAmountInCents - paymentAllocatedInCents;
 
       if (amountToAllocateInCents > paymentRemainingInCents) {
-          throw new Error(`Le montant à affecter (${(amountToAllocateInCents / 100).toFixed(2)}€) dépasse le solde du paiement (${(paymentRemainingInCents / 100).toFixed(2)}€).`);
+          throw new Error(`Le montant à affecter (${(amountToAllocateInCents / 100).toFixed(2)})${CURRENCY_LABEL} dépasse le solde du paiement (${(paymentRemainingInCents / 100).toFixed(2)})${CURRENCY_LABEL}.`);
       }
 
       // 3. Créer l'enregistrement d'allocation.

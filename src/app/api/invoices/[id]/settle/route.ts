@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { InvoiceStatus, PaymentStatus } from '@prisma/client';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 interface SettlePayload {
   sourceType: 'PAYMENT' | 'CREDIT_NOTE';
@@ -40,7 +41,7 @@ export async function POST(
       const remainingDue = invoice.total - totalAllocated;
 
       if (amountToAllocate > remainingDue + 0.001) { // Tolérance pour les erreurs de floating point
-        throw new Error(`Le montant à affecter (${amountToAllocate.toFixed(2)}€) dépasse le solde dû (${remainingDue.toFixed(2)}€).`);
+        throw new Error(`Le montant à affecter (${amountToAllocate.toFixed(2)})${CURRENCY_LABEL} dépasse le solde dû (${remainingDue.toFixed(2)})${CURRENCY_LABEL}.`);
       }
 
       // 2. Vérifier la source et créer l'allocation
@@ -50,7 +51,7 @@ export async function POST(
         const paymentRemainingAmount = payment.amount - paymentAllocatedAmount;
 
         if (amountToAllocate > paymentRemainingAmount + 0.001) {
-            throw new Error(`Le montant à affecter (${amountToAllocate.toFixed(2)}€) dépasse le solde du paiement (${paymentRemainingAmount.toFixed(2)}€).`);
+            throw new Error(`Le montant à affecter (${amountToAllocate.toFixed(2)})${CURRENCY_LABEL} dépasse le solde du paiement (${paymentRemainingAmount.toFixed(2)})${CURRENCY_LABEL}.`);
         }
 
         await tx.paymentAllocation.create({
@@ -73,7 +74,7 @@ export async function POST(
         const creditNote = await tx.creditNote.findUniqueOrThrow({ where: { id: sourceId } });
 
         if (amountToAllocate > creditNote.remainingAmount + 0.001) {
-          throw new Error(`Le montant à affecter (${amountToAllocate.toFixed(2)}€) dépasse le solde de l'avoir (${creditNote.remainingAmount.toFixed(2)}€).`);
+          throw new Error(`Le montant à affecter (${amountToAllocate.toFixed(2)})${CURRENCY_LABEL} dépasse le solde de l'avoir (${creditNote.remainingAmount.toFixed(2)})${CURRENCY_LABEL}.`);
         }
 
         await tx.creditNoteAllocation.create({

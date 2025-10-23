@@ -4,6 +4,7 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import toast from 'react-hot-toast';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- INTERFACES ---
 interface AvailablePayment {
@@ -163,7 +164,7 @@ export default function RecordSupplierPaymentModal({ isOpen, onClose, onSuccess,
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-lg">
         <h2 className="text-2xl font-bold mb-4">Payer la Facture</h2>
-        <p className="text-lg mb-6">Solde dû : <span className="font-bold">{remainingDue.toFixed(2)} €</span></p>
+        <p className="text-lg mb-6">Solde dû : <span className="font-bold">{remainingDue.toFixed(2)} {CURRENCY_LABEL}</span></p>
 
         <div className="border-b border-gray-200 mb-4">
             <nav className="-mb-px flex space-x-6">
@@ -183,7 +184,7 @@ export default function RecordSupplierPaymentModal({ isOpen, onClose, onSuccess,
                   <label htmlFor="payment" className="block text-sm font-medium text-gray-700">Sélectionner un paiement disponible</label>
                   <select id="payment" value={selectedPaymentId} onChange={(e) => setSelectedPaymentId(e.target.value)} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md">
                     <option value="">-- Choisir un paiement --</option>
-                    {availablePayments.map(p => ( <option key={p.id} value={p.id}>{`Paiement de ${p.amount.toFixed(2)}€ (${p.method}) du ${new Date(p.paymentDate).toLocaleDateString('fr-FR')} - Disponible: ${p.remainingAmount.toFixed(2)}€`}</option> ))}
+                    {availablePayments.map(p => ( <option key={p.id} value={p.id}>{`Paiement de ${p.amount.toFixed(2)}${CURRENCY_LABEL} (${p.method}) du ${new Date(p.paymentDate).toLocaleDateString('fr-FR')} - Disponible: ${p.remainingAmount.toFixed(2)}${CURRENCY_LABEL}`}</option> ))}
                   </select>
               </div>
               {selectedPaymentId && (
@@ -197,7 +198,7 @@ export default function RecordSupplierPaymentModal({ isOpen, onClose, onSuccess,
             <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label htmlFor="newAmount" className="block text-sm font-medium text-gray-700">Montant (€) *</label>
+                        <label htmlFor="newAmount" className="block text-sm font-medium text-gray-700">Montant ({CURRENCY_LABEL}) *</label>
                         <input id="newAmount" type="number" step="0.01" min="0.01" value={newAmount} onChange={(e) => setNewAmount(e.target.value)} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md"/>
                     </div>
                     <div>

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 import RecordSupplierPaymentModal from './RecordSupplierPaymentModal';
 import ReceiveStockModal from './ReceiveStockModal';
+import { CURRENCY_LABEL } from '@/lib/constants';
 import { SupplierInvoiceStatus } from '@prisma/client';
 import { Trash2, Truck } from 'lucide-react';
 
@@ -139,7 +140,7 @@ export default function SupplierInvoiceDetailPage() {
               </div>
               <div className="text-right">
                 <p className="text-gray-600">Total</p>
-                <p className="text-4xl font-bold">{invoice.total.toFixed(2)} €</p>
+                <p className="text-4xl font-bold">{invoice.total.toFixed(2)} {CURRENCY_LABEL}</p>
                 <div className="mt-2"><StatusBadge status={invoice.status} /></div>
               </div>
             </header>
@@ -150,8 +151,8 @@ export default function SupplierInvoiceDetailPage() {
                   <p><span className="font-semibold text-gray-600">Date d&apos;échéance:</span> {new Date(invoice.dueDate).toLocaleDateString('fr-FR')}</p>
               </div>
               <div className="text-right font-semibold">
-                  <p><span className="font-normal text-gray-600">Montant payé:</span> <span className="text-green-600">{totalAllocated.toFixed(2)} €</span></p>
-                  <p><span className="font-normal text-gray-600">Solde dû:</span> <span className="text-red-600">{remainingDue.toFixed(2)} €</span></p>
+                  <p><span className="font-normal text-gray-600">Montant payé:</span> <span className="text-green-600">{totalAllocated.toFixed(2)} {CURRENCY_LABEL}</span></p>
+                  <p><span className="font-normal text-gray-600">Solde dû:</span> <span className="text-red-600">{remainingDue.toFixed(2)} {CURRENCY_LABEL}</span></p>
               </div>
             </section>
 
@@ -212,7 +213,7 @@ export default function SupplierInvoiceDetailPage() {
                         <tr key={alloc.id}>
                           <td className="px-4 py-2">{new Date(alloc.payment.paymentDate).toLocaleDateString('fr-FR')}</td>
                           <td className="px-4 py-2">{alloc.payment.method}</td>
-                          <td className="px-4 py-2 text-right font-medium">{alloc.amountAllocated.toFixed(2)} €</td>
+                          <td className="px-4 py-2 text-right font-medium">{alloc.amountAllocated.toFixed(2)} {CURRENCY_LABEL}</td>
                           <td className="px-4 py-2 text-right">
                             {isVoidable && (
                                 <button onClick={() => handleDetachPayment(alloc.id)} disabled={isProcessing} title="Détacher le paiement" className="text-red-500 hover:text-red-700 disabled:text-gray-400">

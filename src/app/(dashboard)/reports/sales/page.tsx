@@ -5,6 +5,7 @@
 import { useState, FormEvent, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import SearchableDropdown, { DropdownItem } from '@/components/SearchableDropdown';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- TypeScript Interfaces ---
 interface SalesSummary {
@@ -139,10 +140,10 @@ export default function SalesReportPage() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <StatCard title="Chiffre d'affaires total" value={`${reportData.summary.totalRevenue.toFixed(2)} €`} />
+            <StatCard title="Chiffre d'affaires total" value={`${reportData.summary.totalRevenue.toFixed(2)} ${CURRENCY_LABEL}`} />
             <StatCard title="Articles vendus" value={reportData.summary.totalItemsSold.toString()} />
             <StatCard title="Nombre de commandes" value={reportData.summary.numberOfOrders.toString()} />
-            <StatCard title="Panier moyen" value={`${reportData.summary.averageOrderValue.toFixed(2)} €`} />
+            <StatCard title="Panier moyen" value={`${reportData.summary.averageOrderValue.toFixed(2)} ${CURRENCY_LABEL}`} />
           </div>
 
           <div className="border rounded-lg overflow-hidden bg-white shadow">
@@ -165,7 +166,7 @@ export default function SalesReportPage() {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-right font-semibold text-gray-700">{item.quantitySold}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-right font-semibold text-green-700">
-                        {item.totalRevenue.toFixed(2)} €
+                        {item.totalRevenue.toFixed(2)} {CURRENCY_LABEL}
                         </td>
                     </tr>
                     ))

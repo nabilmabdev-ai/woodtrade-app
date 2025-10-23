@@ -7,6 +7,7 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 // --- ✅ LES IMPORTATIONS SONT MAINTENANT UTILISÉES ---
 import { UserPlus, Edit, Trash2, PlusCircle, DollarSign } from 'lucide-react';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 import SupplierInvoiceList from './SupplierInvoiceList';
 import SupplierPaymentList from './SupplierPaymentList';
@@ -63,7 +64,7 @@ const QuickPaymentModal = ({ isOpen, onClose, onSuccess, supplierId, supplierNam
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="amount" className="block text-sm font-medium text-gray-700">Montant (€) *</label>
+                            <label htmlFor="amount" className="block text-sm font-medium text-gray-700">Montant ({CURRENCY_LABEL}) *</label>
                             <input id="amount" type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required autoFocus className="mt-1 block w-full p-2 border border-gray-300 rounded-md"/>
                         </div>
                         <div>
@@ -165,7 +166,7 @@ export default function SupplierDetailPage() {
         </div>
 
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <StatCard title={financials.balance === 0 ? "Solde" : balanceLabel} value={`${Math.abs(financials.balance).toFixed(2)} €`} colorClass={balanceColor} />
+          <StatCard title={financials.balance === 0 ? "Solde" : balanceLabel} value={`${Math.abs(financials.balance).toFixed(2)} ${CURRENCY_LABEL}`} colorClass={balanceColor} />
           <StatCard title="Factures en Retard" value={financials.overdueInvoiceCount.toString()} colorClass={financials.overdueInvoiceCount > 0 ? 'text-red-600' : 'text-gray-900'}/>
         </section>
 

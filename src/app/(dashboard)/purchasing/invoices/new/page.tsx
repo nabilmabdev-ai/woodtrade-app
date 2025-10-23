@@ -7,6 +7,7 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 import SearchableDropdown, { DropdownItem } from '@/components/SearchableDropdown';
 import { Trash2 } from 'lucide-react';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- INTERFACES ---
 interface ProductWithVariants { id: string; name: string; variants: Array<{ id: string; unit: string; }>; }
@@ -138,7 +139,7 @@ function NewInvoiceForm() {
                         <input id="quantity" type="number" step="any" value={currentQuantity} onChange={(e) => setCurrentQuantity(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
                     </div>
                     <div>
-                        <label htmlFor="unitPrice" className="block text-sm font-medium text-gray-700">Prix d&apos;Achat (€) *</label>
+                        <label htmlFor="unitPrice" className="block text-sm font-medium text-gray-700">Prix d&apos;Achat ({CURRENCY_LABEL}) *</label>
                         {/* --- ✅ CORRECTION : 'required' A ÉTÉ SUPPRIMÉ --- */}
                         <input id="unitPrice" type="number" step="0.01" value={currentUnitPrice} onChange={(e) => setCurrentUnitPrice(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
                     </div>
@@ -156,8 +157,8 @@ function NewInvoiceForm() {
                             <tr key={line.productVariantId}>
                                 <td className="px-6 py-4">{line.productName}</td>
                                 <td className="px-6 py-4 text-right">{line.quantity}</td>
-                                <td className="px-6 py-4 text-right">{line.unitPrice.toFixed(2)} €</td>
-                                <td className="px-6 py-4 text-right font-semibold">{(line.quantity * line.unitPrice).toFixed(2)} €</td>
+                                <td className="px-6 py-4 text-right">{line.unitPrice.toFixed(2)} {CURRENCY_LABEL}</td>
+                                <td className="px-6 py-4 text-right font-semibold">{(line.quantity * line.unitPrice).toFixed(2)} {CURRENCY_LABEL}</td>
                                 <td className="px-6 py-4 text-right">
                                     <button type="button" onClick={() => handleRemoveLine(line.productVariantId)} className="text-red-500 hover:text-red-700"><Trash2 className="h-4 w-4" /></button>
                                 </td>
@@ -167,7 +168,7 @@ function NewInvoiceForm() {
                     <tfoot>
                         <tr className="bg-gray-50 font-bold">
                             <td colSpan={3} className="px-6 py-3 text-right">Total</td>
-                            <td className="px-6 py-3 text-right">{subtotal.toFixed(2)} €</td>
+                            <td className="px-6 py-3 text-right">{subtotal.toFixed(2)} {CURRENCY_LABEL}</td>
                             <td></td>
                         </tr>
                     </tfoot>
@@ -178,7 +179,7 @@ function NewInvoiceForm() {
                 <div className="max-w-5xl mx-auto flex justify-between items-center">
                     <div>
                         <span className="text-gray-600">Total de la Facture:</span>
-                        <span className="text-2xl font-bold ml-4">{subtotal.toFixed(2)} €</span>
+                        <span className="text-2xl font-bold ml-4">{subtotal.toFixed(2)} {CURRENCY_LABEL}</span>
                     </div>
                     <button type="submit" disabled={isSubmitting} className="px-8 py-3 font-bold text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400 text-lg">
                         {isSubmitting ? 'Enregistrement...' : 'Enregistrer la facture'}

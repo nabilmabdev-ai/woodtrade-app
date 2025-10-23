@@ -4,6 +4,7 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import toast from 'react-hot-toast';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- INTERFACES ---
 interface AvailablePayment {
@@ -106,7 +107,7 @@ export default function RecordSupplierPaymentModal({ isOpen, onClose, onSuccess,
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-lg">
         <h2 className="text-2xl font-bold mb-4">Affecter un Paiement</h2>
-        <p className="text-lg mb-6">Solde dû sur la facture : <span className="font-bold">{remainingDue.toFixed(2)} €</span></p>
+        <p className="text-lg mb-6">Solde dû sur la facture : <span className="font-bold">{remainingDue.toFixed(2)} {CURRENCY_LABEL}</span></p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="p-4 border rounded-md bg-gray-50">
@@ -117,7 +118,7 @@ export default function RecordSupplierPaymentModal({ isOpen, onClose, onSuccess,
                     <option value="">-- Choisir un paiement --</option>
                     {availablePayments.map(p => (
                       <option key={p.id} value={p.id}>
-                        {`Paiement de ${p.amount.toFixed(2)}€ (${p.method}) du ${new Date(p.paymentDate).toLocaleDateString('fr-FR')} - Disponible: ${p.remainingAmount.toFixed(2)}€`}
+                        {`Paiement de ${p.amount.toFixed(2)}${CURRENCY_LABEL} (${p.method}) du ${new Date(p.paymentDate).toLocaleDateString('fr-FR')} - Disponible: ${p.remainingAmount.toFixed(2)}${CURRENCY_LABEL}`}
                       </option>
                     ))}
                   </select>

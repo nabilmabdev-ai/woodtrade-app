@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { CircleDollarSign, ShoppingCart, TrendingUp, TriangleAlert, AlertCircle, CalendarClock } from 'lucide-react';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- TYPE DEFINITIONS ---
 interface DashboardStats {
@@ -107,7 +108,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard 
           title="Chiffre d'affaires (7j)" 
-          value={`${stats.salesLast7Days.revenue.toFixed(2)} €`} 
+          value={`${stats.salesLast7Days.revenue.toFixed(2)} ${CURRENCY_LABEL}`}
           icon={CircleDollarSign}
         />
         <StatCard 
@@ -117,13 +118,13 @@ export default function DashboardPage() {
         />
         <StatCard 
           title="Montant Fournisseurs en Retard" 
-          value={`${purchasingStats.overdueAmount.toFixed(2)} €`}
+          value={`${purchasingStats.overdueAmount.toFixed(2)} ${CURRENCY_LABEL}`}
           icon={AlertCircle}
           color="red"
         />
         <StatCard 
           title="À Payer cette Semaine" 
-          value={`${purchasingStats.dueThisWeekAmount.toFixed(2)} €`}
+          value={`${purchasingStats.dueThisWeekAmount.toFixed(2)} ${CURRENCY_LABEL}`}
           icon={CalendarClock}
           color="orange"
         />

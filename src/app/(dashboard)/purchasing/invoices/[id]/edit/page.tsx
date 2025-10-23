@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { SupplierInvoiceStatus } from '@prisma/client';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 interface InvoiceEditData {
   supplier: { name: string };
@@ -119,7 +120,7 @@ export default function EditSupplierInvoicePage() {
                 </div>
                 <div className="text-right">
                     <label className="block text-sm font-medium text-gray-500">Montant Total (Non modifiable)</label>
-                    <p className="text-lg font-semibold text-gray-800">{invoice.total.toFixed(2)} €</p>
+                    <p className="text-lg font-semibold text-gray-800">{invoice.total.toFixed(2)} {CURRENCY_LABEL}</p>
                 </div>
             </div>
         </div>

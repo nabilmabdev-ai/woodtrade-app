@@ -4,6 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import SearchableDropdown, { DropdownItem } from '@/components/SearchableDropdown';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- INTERFACES ---
 interface AvailablePayment {
@@ -113,7 +114,7 @@ export default function ReconciliationPage() {
         if (selectedSupplier) {
           setSelectedSupplier(current => ({...current!})); // Trigger useEffect
         }
-        return `Successfully allocated ${data.totalAllocated.toFixed(2)} €.`;
+        return `Successfully allocated ${data.totalAllocated.toFixed(2)} ${CURRENCY_LABEL}.`;
       },
       error: (err) => `Error: ${err}`,
     }).finally(() => setIsReconciling(false));
@@ -157,7 +158,7 @@ export default function ReconciliationPage() {
                   className={`p-4 border rounded-lg cursor-pointer ${selectedPaymentId === p.id ? 'bg-blue-100 border-blue-400 ring-2 ring-blue-300' : 'bg-gray-50 hover:bg-gray-100'}`}>
                   <div className="flex justify-between items-center">
                     <span className="font-semibold">{p.method} - {new Date(p.paymentDate).toLocaleDateString()}</span>
-                    <span className="text-lg font-bold">{p.remainingAmount.toFixed(2)} €</span>
+                    <span className="text-lg font-bold">{p.remainingAmount.toFixed(2)} {CURRENCY_LABEL}</span>
                   </div>
                 </div>
               ))}
@@ -176,7 +177,7 @@ export default function ReconciliationPage() {
                     <p className="font-medium">Facture #{inv.invoiceNumber || inv.id.substring(0, 8)}</p>
                     <p className="text-sm text-gray-500">Échéance: {new Date(inv.dueDate).toLocaleDateString()}</p>
                   </div>
-                  <p className="font-semibold">{inv.remainingDue.toFixed(2)} €</p>
+                  <p className="font-semibold">{inv.remainingDue.toFixed(2)} {CURRENCY_LABEL}</p>
                 </div>
               ))}
               {invoices.length === 0 && <p className="text-sm text-gray-500">Aucune facture impayée.</p>}
@@ -187,7 +188,7 @@ export default function ReconciliationPage() {
           <div className="lg:col-span-2 mt-4 p-4 bg-gray-100 rounded-lg flex justify-between items-center">
             <div>
               <span className="font-semibold">Total Factures Sélectionnées: </span>
-              <span className="text-xl font-bold ml-2">{totalSelectedInvoices.toFixed(2)} €</span>
+              <span className="text-xl font-bold ml-2">{totalSelectedInvoices.toFixed(2)} {CURRENCY_LABEL}</span>
             </div>
             <button onClick={handleReconcile} disabled={!canReconcile || isReconciling}
               className="px-6 py-3 font-bold text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400">

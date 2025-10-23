@@ -4,6 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import SearchableDropdown, { DropdownItem } from '@/components/SearchableDropdown';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- INTERFACES ---
 
@@ -85,7 +86,7 @@ export default function CustomerReconciliationPage() {
 
           const paymentSources: PaymentSource[] = paymentsData
             .filter((p) => p.remainingAmount > 0.01)
-            .map((p) => ({ id: p.id, type: 'PAYMENT', label: `Paiement de ${p.amount.toFixed(2)}€ (${p.method})`, remainingAmount: p.remainingAmount }));
+            .map((p) => ({ id: p.id, type: 'PAYMENT', label: `Paiement de ${p.amount.toFixed(2)}${CURRENCY_LABEL} (${p.method})`, remainingAmount: p.remainingAmount }));
           
           const creditNoteSources: PaymentSource[] = creditNotesData
             .filter((cn) => cn.remainingAmount > 0.01 && cn.status !== 'FULLY_USED')
@@ -138,7 +139,7 @@ export default function CustomerReconciliationPage() {
       loading: 'Reconciliation in progress...',
       success: (data) => {
         if (selectedCustomer) setSelectedCustomer(current => ({...current!}));
-        return `Successfully allocated ${data.totalAllocated.toFixed(2)} €.`;
+        return `Successfully allocated ${data.totalAllocated.toFixed(2)} ${CURRENCY_LABEL}.`;
       },
       error: (err) => `Error: ${err}`,
     }).finally(() => setIsReconciling(false));
@@ -181,7 +182,7 @@ export default function CustomerReconciliationPage() {
                   className={`p-4 border rounded-lg cursor-pointer ${selectedSource?.id === s.id ? 'bg-blue-100 border-blue-400 ring-2 ring-blue-300' : 'bg-gray-50 hover:bg-gray-100'}`}>
                   <div className="flex justify-between items-center">
                     <span className="font-semibold">{s.label}</span>
-                    <span className="text-lg font-bold">{s.remainingAmount.toFixed(2)} €</span>
+                    <span className="text-lg font-bold">{s.remainingAmount.toFixed(2)} {CURRENCY_LABEL}</span>
                   </div>
                 </div>
               ))}
@@ -200,7 +201,7 @@ export default function CustomerReconciliationPage() {
                     <p className="font-medium">Facture #{inv.id.substring(0,8)}</p>
                     <p className="text-sm text-gray-500">Échéance: {new Date(inv.dueDate).toLocaleDateString()}</p>
                   </div>
-                  <p className="font-semibold">{inv.remainingDue.toFixed(2)} €</p>
+                  <p className="font-semibold">{inv.remainingDue.toFixed(2)} {CURRENCY_LABEL}</p>
                 </div>
               ))}
               {invoices.length === 0 && <p className="text-sm text-gray-500">Aucune facture impayée.</p>}
@@ -211,7 +212,7 @@ export default function CustomerReconciliationPage() {
           <div className="lg:col-span-2 mt-4 p-4 bg-gray-100 rounded-lg flex justify-between items-center">
             <div>
               <span className="font-semibold">Total Factures Sélectionnées: </span>
-              <span className="text-xl font-bold ml-2">{totalSelectedInvoices.toFixed(2)} €</span>
+              <span className="text-xl font-bold ml-2">{totalSelectedInvoices.toFixed(2)} {CURRENCY_LABEL}</span>
             </div>
             <button onClick={handleReconcile} disabled={!canReconcile || isReconciling}
               className="px-6 py-3 font-bold text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400">

@@ -6,6 +6,7 @@ import { SupplierInvoiceStatus } from '@prisma/client';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { Download } from 'lucide-react';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 interface SupplierInvoiceListItem {
   id: string;
@@ -176,7 +177,7 @@ export default function SupplierInvoicesPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(invoice.invoiceDate).toLocaleDateString('fr-FR')}</td>
                         <td className={`px-6 py-4 whitespace-nowrap text-sm ${dateClass}`}>{new Date(invoice.dueDate).toLocaleDateString('fr-FR')}</td>
                         <td className="px-6 py-4 whitespace-nowrap"><StatusBadge status={invoice.status} /></td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 text-right font-semibold">{invoice.total.toFixed(2)} €</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 text-right font-semibold">{invoice.total.toFixed(2)} {CURRENCY_LABEL}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <a href={`/purchasing/invoices/${invoice.id}`} className="text-indigo-600 hover:text-indigo-900">Détails</a>
                         </td>

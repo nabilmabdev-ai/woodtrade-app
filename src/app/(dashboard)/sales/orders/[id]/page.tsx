@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 interface OrderDetails {
   id: string;
@@ -100,9 +101,9 @@ export default function OrderDetailPage() {
                 <tr key={line.id}>
                   <td className="px-4 py-3 text-sm text-gray-900">{line.productVariant.product.name}</td>
                   <td className="px-4 py-3 text-sm text-gray-500 text-right">{line.quantity} {line.productVariant.unit}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500 text-right">{line.unitPrice.toFixed(2)} €</td>
-                  <td className="px-4 py-3 text-sm text-red-500 text-right">- {line.discount.toFixed(2)} €</td>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900 text-right">{line.totalPrice.toFixed(2)} €</td>
+                  <td className="px-4 py-3 text-sm text-gray-500 text-right">{line.unitPrice.toFixed(2)} {CURRENCY_LABEL}</td>
+                  <td className="px-4 py-3 text-sm text-red-500 text-right">- {line.discount.toFixed(2)} {CURRENCY_LABEL}</td>
+                  <td className="px-4 py-3 text-sm font-medium text-gray-900 text-right">{line.totalPrice.toFixed(2)} {CURRENCY_LABEL}</td>
                 </tr>
               ))}
             </tbody>
@@ -113,15 +114,15 @@ export default function OrderDetailPage() {
             <div className="w-full max-w-sm space-y-2">
                 <div className="flex justify-between">
                     <span className="text-gray-600">Sous-total</span>
-                    <span className="font-semibold">{order.subtotal.toFixed(2)} €</span>
+                    <span className="font-semibold">{order.subtotal.toFixed(2)} {CURRENCY_LABEL}</span>
                 </div>
                  <div className="flex justify-between">
                     <span className="text-gray-600">Remise totale</span>
-                    <span className="font-semibold text-red-500">- {order.discount.toFixed(2)} €</span>
+                    <span className="font-semibold text-red-500">- {order.discount.toFixed(2)} {CURRENCY_LABEL}</span>
                 </div>
                 <div className="flex justify-between text-xl font-bold pt-2 border-t">
                     <span>Total à Payer</span>
-                    <span>{order.grandTotal.toFixed(2)} €</span>
+                    <span>{order.grandTotal.toFixed(2)} {CURRENCY_LABEL}</span>
                 </div>
             </div>
         </div>

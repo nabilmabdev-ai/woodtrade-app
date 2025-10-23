@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { CreditNoteStatus } from '@prisma/client';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- INTERFACES ---
 interface CreditNote {
@@ -81,8 +82,8 @@ export default function CreditNotesPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{cn.company.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(cn.createdAt).toLocaleDateString('fr-FR')}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-xs">{cn.reason}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-800">{cn.initialAmount.toFixed(2)} €</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-blue-600">{cn.remainingAmount.toFixed(2)} €</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-800">{cn.initialAmount.toFixed(2)} {CURRENCY_LABEL}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-blue-600">{cn.remainingAmount.toFixed(2)} {CURRENCY_LABEL}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><StatusBadge status={cn.status} /></td>
                 </tr>
               ))

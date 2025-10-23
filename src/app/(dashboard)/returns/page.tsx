@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { Role } from '@prisma/client';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- INTERFACES ---
 interface FoundOrder {
@@ -240,7 +241,7 @@ export default function ReturnsPage() {
             <ul className="divide-y divide-gray-200">
               {searchResults.map(order => (
                 <li key={order.id} onClick={() => handleSelectOrder(order)} className="p-3 hover:bg-blue-50 cursor-pointer">
-                  <p className="font-semibold">{order.company.name} - {order.grandTotal.toFixed(2)} €</p>
+                  <p className="font-semibold">{order.company.name} - {order.grandTotal.toFixed(2)} {CURRENCY_LABEL}</p>
                   <p className="text-sm text-gray-500">
                     ID: {order.id} | Date: {new Date(order.createdAt).toLocaleDateString('fr-FR')}
                   </p>
@@ -309,7 +310,7 @@ export default function ReturnsPage() {
                 </div>
                 <div className="text-right">
                     <p className="text-gray-600">Montant total du retour</p>
-                    <p className="text-3xl font-bold">{totalRefundAmount.toFixed(2)} €</p>
+                    <p className="text-3xl font-bold">{totalRefundAmount.toFixed(2)} {CURRENCY_LABEL}</p>
                 </div>
             </div>
 

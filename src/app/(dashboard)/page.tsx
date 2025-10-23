@@ -55,7 +55,7 @@ const StatCard = ({ title, value, icon: Icon, color = 'blue' }: { title: string,
 const WelcomeBanner = ({ userName }: { userName: string }) => (
     <div className="mb-8 p-6 bg-blue-600 rounded-lg shadow-lg text-white">
         <h1 className="text-3xl font-bold">Bienvenue, {userName} !</h1>
-        <p className="mt-2 text-blue-100">Voici un aperçu de l'activité de votre entreprise.</p>
+        <p className="mt-2 text-blue-100">Voici un aperçu de l&apos;activité de votre entreprise.</p>
     </div>
 );
 
@@ -107,7 +107,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard 
-          title="Chiffre d'affaires (7j)" 
+          title="Chiffre d&apos;affaires (7j)" // ✅ FIX APPLIED HERE
           value={`${stats.salesLast7Days.revenue.toFixed(2)} ${CURRENCY_LABEL}`}
           icon={CircleDollarSign}
         />

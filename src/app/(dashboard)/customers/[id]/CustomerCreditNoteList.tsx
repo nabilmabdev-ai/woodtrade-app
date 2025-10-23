@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { CreditNoteStatus } from '@prisma/client';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- INTERFACES ---
 interface CreditNote {
@@ -45,10 +46,10 @@ const CreditNoteRow = ({ note }: { note: CreditNote }) => (
     </td>
     <td className="px-6 py-4 text-sm text-gray-800">{note.reason}</td>
     <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
-      {note.initialAmount.toFixed(2)} €
+      {note.initialAmount.toFixed(2)} {CURRENCY_LABEL}
     </td>
     <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-blue-600">
-      {note.remainingAmount.toFixed(2)} €
+      {note.remainingAmount.toFixed(2)} {CURRENCY_LABEL}
     </td>
     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
       <StatusBadge status={note.status} />

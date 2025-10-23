@@ -9,6 +9,7 @@ import { PDFDownloadLink } from '@react-pdf/renderer';
 import { InvoiceDocument } from '@/components/pdf/InvoiceDocument';
 import RecordPaymentModal from './RecordPaymentModal';
 import { Trash2 } from 'lucide-react';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- INTERFACES ---
 interface Allocation {
@@ -131,7 +132,7 @@ export default function InvoiceDetailPage() {
                 <p className="font-semibold text-lg mt-2">{invoice.order.company.name}</p>
               </div>
               <div className="text-right">
-                <p className="text-4xl font-bold">{invoice.total.toFixed(2)} €</p>
+                <p className="text-4xl font-bold">{invoice.total.toFixed(2)} {CURRENCY_LABEL}</p>
                 <div className={`mt-2 text-2xl font-bold ${invoice.status === 'PAID' ? 'text-green-600' : 'text-orange-500'}`}>
                   {invoice.status.replace('_', ' ')}
                 </div>
@@ -144,8 +145,8 @@ export default function InvoiceDetailPage() {
                     <p><span className="font-semibold text-gray-600">Échéance:</span> {new Date(invoice.dueDate).toLocaleDateString('fr-FR')}</p>
                 </div>
                 <div className="text-right font-semibold">
-                    <p><span className="font-normal text-gray-600">Payé:</span> <span className="text-green-600">{totalAllocated.toFixed(2)} €</span></p>
-                    <p><span className="font-normal text-gray-600">Solde dû:</span> <span className="text-red-600">{remainingDue.toFixed(2)} €</span></p>
+                    <p><span className="font-normal text-gray-600">Payé:</span> <span className="text-green-600">{totalAllocated.toFixed(2)} {CURRENCY_LABEL}</span></p>
+                    <p><span className="font-normal text-gray-600">Solde dû:</span> <span className="text-red-600">{remainingDue.toFixed(2)} {CURRENCY_LABEL}</span></p>
                 </div>
             </section>
 
@@ -166,8 +167,8 @@ export default function InvoiceDetailPage() {
                       <tr key={line.id}>
                         <td className="px-4 py-3">{line.productVariant.product.name}</td>
                         <td className="px-4 py-3 text-right">{line.quantity}</td>
-                        <td className="px-4 py-3 text-right">{line.unitPrice.toFixed(2)} €</td>
-                        <td className="px-4 py-3 text-right font-semibold">{line.totalPrice.toFixed(2)} €</td>
+                        <td className="px-4 py-3 text-right">{line.unitPrice.toFixed(2)} {CURRENCY_LABEL}</td>
+                        <td className="px-4 py-3 text-right font-semibold">{line.totalPrice.toFixed(2)} {CURRENCY_LABEL}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -193,7 +194,7 @@ export default function InvoiceDetailPage() {
                         <tr key={alloc.id}>
                           <td className="px-4 py-2">{new Date(alloc.payment.paymentDate).toLocaleDateString('fr-FR')}</td>
                           <td className="px-4 py-2">Paiement ({alloc.payment.method})</td>
-                          <td className="px-4 py-2 text-right font-medium">{alloc.amountAllocated.toFixed(2)} €</td>
+                          <td className="px-4 py-2 text-right font-medium">{alloc.amountAllocated.toFixed(2)} {CURRENCY_LABEL}</td>
                           <td className="px-4 py-2 text-right">
                             <button onClick={() => handleDetachAllocation(alloc.id, 'payment')} disabled={isProcessing} title="Détacher" className="text-red-500 hover:text-red-700 disabled:text-gray-400"><Trash2 className="h-4 w-4" /></button>
                           </td>
@@ -203,7 +204,7 @@ export default function InvoiceDetailPage() {
                         <tr key={alloc.id}>
                             <td className="px-4 py-2">{new Date(alloc.creditNote.createdAt).toLocaleDateString('fr-FR')}</td>
                             <td className="px-4 py-2">Avoir ({alloc.creditNote.reason})</td>
-                            <td className="px-4 py-2 text-right font-medium">{alloc.amountAllocated.toFixed(2)} €</td>
+                            <td className="px-4 py-2 text-right font-medium">{alloc.amountAllocated.toFixed(2)} {CURRENCY_LABEL}</td>
                             <td className="px-4 py-2 text-right">
                                 <button onClick={() => handleDetachAllocation(alloc.id, 'credit_note')} disabled={isProcessing} title="Détacher" className="text-red-500 hover:text-red-700 disabled:text-gray-400"><Trash2 className="h-4 w-4" /></button>
                             </td>

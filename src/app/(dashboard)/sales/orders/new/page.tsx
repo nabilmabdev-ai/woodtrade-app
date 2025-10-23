@@ -4,6 +4,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- ✅ INTERFACES AJOUTÉES POUR LA SÉCURITÉ DE TYPE ---
 interface Company { id: string; name: string; }
@@ -145,14 +146,14 @@ export default function NewOrderPage() {
               currentLines.map((line, index) => (
                 <div key={index} className="flex justify-between items-center p-2 bg-white rounded-md border">
                   <span>{line.productName}</span>
-                  <span>{line.quantity} x {line.unitPrice.toFixed(2)} €</span>
+                  <span>{line.quantity} x {line.unitPrice.toFixed(2)} {CURRENCY_LABEL}</span>
                 </div>
               ))
             ) : (<p className="text-gray-500">La commande est vide.</p>)}
           </div>
           <hr className="my-4"/>
           <div className="text-right font-bold text-lg">
-            Total: {currentLines.reduce((acc, line) => acc + line.quantity * line.unitPrice, 0).toFixed(2)} €
+            Total: {currentLines.reduce((acc, line) => acc + line.quantity * line.unitPrice, 0).toFixed(2)} {CURRENCY_LABEL}
           </div>
         </div>
         <button type="submit" className="w-full px-6 py-3 font-bold text-white bg-blue-600 rounded-md hover:bg-blue-700 text-xl">

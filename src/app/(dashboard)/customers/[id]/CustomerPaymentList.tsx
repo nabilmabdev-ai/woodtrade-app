@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { PaymentStatus } from '@prisma/client';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- INTERFACES ---
 interface CustomerPayment {
@@ -44,10 +45,10 @@ const PaymentRow = ({ payment }: { payment: CustomerPayment }) => (
     </td>
     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{payment.method}</td>
     <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
-      {payment.amount.toFixed(2)} €
+      {payment.amount.toFixed(2)} {CURRENCY_LABEL}
     </td>
     <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-blue-600">
-      {payment.remainingAmount.toFixed(2)} €
+      {payment.remainingAmount.toFixed(2)} {CURRENCY_LABEL}
     </td>
     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
       <StatusBadge status={payment.status} />

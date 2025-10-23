@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { InvoiceStatus } from '@prisma/client';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- Définition du type pour une facture dans la liste ---
 interface InvoiceListItem {
@@ -122,7 +123,7 @@ export default function InvoicesPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <StatusBadge status={invoice.status} />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 text-right font-semibold">{invoice.total.toFixed(2)} €</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 text-right font-semibold">{invoice.total.toFixed(2)} {CURRENCY_LABEL}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <a href={`/billing/invoices/${invoice.id}`} className="text-indigo-600 hover:text-indigo-900">
                       Détails

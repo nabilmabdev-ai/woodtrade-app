@@ -7,6 +7,7 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { CashMovementType, CashRegisterType } from '@prisma/client';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- Interfaces ---
 interface CashRegister { id: string; name: string; type: CashRegisterType; }
@@ -18,14 +19,14 @@ const CloseSessionModal = ({ isOpen, onClose, onSubmit }: { isOpen: boolean; onC
   const [closingBalance, setClosingBalance] = useState('');
   if (!isOpen) return null;
   const handleSubmit = (e: FormEvent) => { e.preventDefault(); const balance = parseFloat(closingBalance); if (isNaN(balance) || balance < 0) { toast.error("Veuillez entrer un montant valide."); return; } onSubmit(balance); };
-  return ( <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"> <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md"> <h2 className="text-2xl font-bold mb-6">Clôturer la session</h2> <form onSubmit={handleSubmit} className="space-y-4"> <div> <label htmlFor="closingBalance" className="block text-sm font-medium text-gray-700"> Montant total compté en caisse (€) </label> <input id="closingBalance" type="number" step="0.01" min="0" value={closingBalance} onChange={(e) => setClosingBalance(e.target.value)} required autoFocus className="mt-1 block w-full p-3 border border-gray-300 rounded-md text-lg" placeholder="Ex: 2350.55" /> <p className="text-xs text-gray-500 mt-1">Entrez le montant exact que vous avez compté dans le tiroir-caisse.</p> </div> <div className="flex justify-end space-x-4 pt-6"> <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200" > Annuler </button> <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700" > Confirmer la clôture </button> </div> </form> </div> </div> );
+  return ( <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"> <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md"> <h2 className="text-2xl font-bold mb-6">Clôturer la session</h2> <form onSubmit={handleSubmit} className="space-y-4"> <div> <label htmlFor="closingBalance" className="block text-sm font-medium text-gray-700"> Montant total compté en caisse ({CURRENCY_LABEL}) </label> <input id="closingBalance" type="number" step="0.01" min="0" value={closingBalance} onChange={(e) => setClosingBalance(e.target.value)} required autoFocus className="mt-1 block w-full p-3 border border-gray-300 rounded-md text-lg" placeholder="Ex: 2350.55" /> <p className="text-xs text-gray-500 mt-1">Entrez le montant exact que vous avez compté dans le tiroir-caisse.</p> </div> <div className="flex justify-end space-x-4 pt-6"> <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200" > Annuler </button> <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700" > Confirmer la clôture </button> </div> </form> </div> </div> );
 };
 const WithdrawalModal = ({ isOpen, onClose, onSubmit }: { isOpen: boolean; onClose: () => void; onSubmit: (amount: number, reason: string) => void; }) => {
     const [amount, setAmount] = useState('');
     const [reason, setReason] = useState('');
     if (!isOpen) return null;
     const handleSubmit = (e: FormEvent) => { e.preventDefault(); const parsedAmount = parseFloat(amount); if (isNaN(parsedAmount) || parsedAmount <= 0 || !reason) { toast.error("Veuillez entrer un montant et une raison valides."); return; } onSubmit(parsedAmount, reason); };
-    return ( <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"> <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md"> <h2 className="text-2xl font-bold mb-6">Effectuer un retrait d&apos;espèces</h2> <form onSubmit={handleSubmit} className="space-y-4"> <div> <label htmlFor="withdrawalAmount" className="block text-sm font-medium text-gray-700">Montant du retrait (€)</label> <input id="withdrawalAmount" type="number" step="0.01" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} required autoFocus className="mt-1 block w-full p-3 border border-gray-300 rounded-md" /> </div> <div> <label htmlFor="withdrawalReason" className="block text-sm font-medium text-gray-700">Motif du retrait (obligatoire)</label> <input id="withdrawalReason" type="text" value={reason} onChange={(e) => setReason(e.target.value)} required placeholder="Ex: Dépôt en banque, Avance fournisseur" className="mt-1 block w-full p-3 border border-gray-300 rounded-md" /> </div> <div className="flex justify-end space-x-4 pt-6"> <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Annuler</button> <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">Confirmer le Retrait</button> </div> </form> </div> </div> );
+    return ( <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"> <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md"> <h2 className="text-2xl font-bold mb-6">Effectuer un retrait d&apos;espèces</h2> <form onSubmit={handleSubmit} className="space-y-4"> <div> <label htmlFor="withdrawalAmount" className="block text-sm font-medium text-gray-700">Montant du retrait ({CURRENCY_LABEL})</label> <input id="withdrawalAmount" type="number" step="0.01" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} required autoFocus className="mt-1 block w-full p-3 border border-gray-300 rounded-md" /> </div> <div> <label htmlFor="withdrawalReason" className="block text-sm font-medium text-gray-700">Motif du retrait (obligatoire)</label> <input id="withdrawalReason" type="text" value={reason} onChange={(e) => setReason(e.target.value)} required placeholder="Ex: Dépôt en banque, Avance fournisseur" className="mt-1 block w-full p-3 border border-gray-300 rounded-md" /> </div> <div className="flex justify-end space-x-4 pt-6"> <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Annuler</button> <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">Confirmer le Retrait</button> </div> </form> </div> </div> );
 };
 const TransferModal = ({ isOpen, onClose, onSubmit, allRegisters, currentRegisterId }: { isOpen: boolean; onClose: () => void; onSubmit: (amount: number, destinationRegisterId: string, reason: string) => void; allRegisters: CashRegister[]; currentRegisterId: string; }) => {
     const [amount, setAmount] = useState('');
@@ -37,7 +38,7 @@ const TransferModal = ({ isOpen, onClose, onSubmit, allRegisters, currentRegiste
     }, [availableRegisters]);
     if (!isOpen) return null;
     const handleSubmit = (e: FormEvent) => { e.preventDefault(); const parsedAmount = parseFloat(amount); if (isNaN(parsedAmount) || parsedAmount <= 0 || !reason || !destinationId) { toast.error("Veuillez remplir tous les champs correctement."); return; } onSubmit(parsedAmount, destinationId, reason); };
-    return ( <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"> <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md"> <h2 className="text-2xl font-bold mb-6">Transférer des fonds</h2> <form onSubmit={handleSubmit} className="space-y-4"> <div> <label className="block text-sm font-medium text-gray-700">Caisse de destination</label> <select value={destinationId} onChange={e => setDestinationId(e.target.value)} required className="mt-1 block w-full p-3 border border-gray-300 rounded-md"> {availableRegisters.map(r => <option key={r.id} value={r.id}>{r.name}</option>)} </select> {availableRegisters.length === 0 && <p className="text-xs text-gray-500 mt-1">Aucune autre caisse disponible pour un transfert.</p>} </div> <div> <label className="block text-sm font-medium text-gray-700">Montant à transférer (€)</label> <input type="number" step="0.01" min="0.01" value={amount} onChange={e => setAmount(e.target.value)} required className="mt-1 block w-full p-3 border border-gray-300 rounded-md" /> </div> <div> <label className="block text-sm font-medium text-gray-700">Motif du transfert</label> <input type="text" value={reason} onChange={e => setReason(e.target.value)} required placeholder="Ex: Équilibrage des caisses" className="mt-1 block w-full p-3 border border-gray-300 rounded-md" /> </div> <div className="flex justify-end space-x-4 pt-6"> <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Annuler</button> <button type="submit" disabled={availableRegisters.length === 0} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400">Confirmer le Transfert</button> </div> </form> </div> </div> );
+    return ( <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"> <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md"> <h2 className="text-2xl font-bold mb-6">Transférer des fonds</h2> <form onSubmit={handleSubmit} className="space-y-4"> <div> <label className="block text-sm font-medium text-gray-700">Caisse de destination</label> <select value={destinationId} onChange={e => setDestinationId(e.target.value)} required className="mt-1 block w-full p-3 border border-gray-300 rounded-md"> {availableRegisters.map(r => <option key={r.id} value={r.id}>{r.name}</option>)} </select> {availableRegisters.length === 0 && <p className="text-xs text-gray-500 mt-1">Aucune autre caisse disponible pour un transfert.</p>} </div> <div> <label className="block text-sm font-medium text-gray-700">Montant à transférer ({CURRENCY_LABEL})</label> <input type="number" step="0.01" min="0.01" value={amount} onChange={e => setAmount(e.target.value)} required className="mt-1 block w-full p-3 border border-gray-300 rounded-md" /> </div> <div> <label className="block text-sm font-medium text-gray-700">Motif du transfert</label> <input type="text" value={reason} onChange={e => setReason(e.target.value)} required placeholder="Ex: Équilibrage des caisses" className="mt-1 block w-full p-3 border border-gray-300 rounded-md" /> </div> <div className="flex justify-end space-x-4 pt-6"> <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Annuler</button> <button type="submit" disabled={availableRegisters.length === 0} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400">Confirmer le Transfert</button> </div> </form> </div> </div> );
 };
 
 const ExpenseRegisterView = ({ register }: { register: CashRegister }) => {
@@ -100,7 +101,7 @@ const ExpenseRegisterView = ({ register }: { register: CashRegister }) => {
                 <div className="bg-yellow-50 p-4 rounded-md">
                     <p className="font-bold text-xl">Solde Actuel (Mois en cours)</p>
                     <p className={`text-3xl font-bold ${balance >= 0 ? 'text-gray-800' : 'text-red-600'}`}>
-                        {balance.toFixed(2)} €
+                        {balance.toFixed(2)} {CURRENCY_LABEL}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">Ce solde est calculé en continu. Pas de session à gérer.</p>
                 </div>
@@ -118,7 +119,7 @@ const ExpenseRegisterView = ({ register }: { register: CashRegister }) => {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Montant (€)</label>
+                            <label className="block text-sm font-medium text-gray-700">Montant ({CURRENCY_LABEL})</label>
                             <input type="number" step="0.01" min="0.01" value={amount} onChange={e => setAmount(e.target.value)} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
                         </div>
                         <div>
@@ -141,7 +142,7 @@ const ExpenseRegisterView = ({ register }: { register: CashRegister }) => {
                                 <p className="font-medium text-sm">{m.reason}</p>
                                 <p className="text-xs text-gray-500">Par {m.user.name || m.user.email} le {new Date(m.createdAt).toLocaleDateString('fr-FR')}</p>
                                 </div>
-                                <span className={`font-bold text-base ${m.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>{m.amount.toFixed(2)} €</span>
+                                <span className={`font-bold text-base ${m.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>{m.amount.toFixed(2)} {CURRENCY_LABEL}</span>
                             </div>
                             </li>
                         )) : <p className="text-sm text-gray-500 text-center py-4">Aucun mouvement ce mois-ci.</p>}
@@ -212,9 +213,9 @@ const SalesRegisterView = ({ register, allRegisters, onDataChange }: { register:
                 setIsCloseModalOpen(false);
                 onDataChange(); // Refresh parent to get latest session status
                 const difference = closedSession.difference.toFixed(2);
-                if (Math.abs(closedSession.difference) < 0.01) toast.success(`Session fermée. La caisse est juste ! (${difference} €)`);
-                else if (closedSession.difference > 0) toast.success(`Session fermée. Excédent de ${difference} €.`);
-                else toast.error(`Session fermée. Manquant de ${difference} €.`);
+                if (Math.abs(closedSession.difference) < 0.01) toast.success(`Session fermée. La caisse est juste ! (${difference} ${CURRENCY_LABEL})`);
+                else if (closedSession.difference > 0) toast.success(`Session fermée. Excédent de ${difference} ${CURRENCY_LABEL}.`);
+                else toast.error(`Session fermée. Manquant de ${difference} ${CURRENCY_LABEL}.`);
                 return 'Clôture terminée.';
             },
             error: (err) => `Erreur: ${err}`,
@@ -268,7 +269,7 @@ const SalesRegisterView = ({ register, allRegisters, onDataChange }: { register:
                         <div className="space-y-3">
                             <p><strong>Ouverte par:</strong> {session.openedByUser.name || session.openedByUser.email}</p>
                             <p><strong>Date d&apos;ouverture:</strong> {new Date(session.openedAt).toLocaleString('fr-FR')}</p>
-                            <p className="text-lg"><strong>Fonds de caisse initial:</strong> <span className="font-bold ml-2">{session.openingBalance.toFixed(2)} €</span></p>
+                            <p className="text-lg"><strong>Fonds de caisse initial:</strong> <span className="font-bold ml-2">{session.openingBalance.toFixed(2)} {CURRENCY_LABEL}</span></p>
                         </div>
                         <div className="mt-6 pt-6 border-t space-y-3">
                             <button onClick={() => setIsTransferModalOpen(true)} className="w-full px-6 py-2 font-semibold text-white bg-purple-600 rounded-md hover:bg-purple-700">Effectuer un transfert</button>
@@ -281,7 +282,7 @@ const SalesRegisterView = ({ register, allRegisters, onDataChange }: { register:
                         <h2 className="text-2xl font-semibold text-gray-700 mb-4">Ouvrir une nouvelle session</h2>
                         <form onSubmit={handleOpenSession} className="space-y-4">
                             <div>
-                                <label htmlFor="openingBalance" className="block text-sm font-medium text-gray-700">Fonds de caisse initial (€)</label>
+                                <label htmlFor="openingBalance" className="block text-sm font-medium text-gray-700">Fonds de caisse initial ({CURRENCY_LABEL})</label>
                                 <input id="openingBalance" type="number" step="0.01" min="0" value={openingBalance} onChange={(e) => setOpeningBalance(e.target.value)} required autoFocus className="mt-1 block w-full p-3 border border-gray-300 rounded-md text-lg" placeholder="Ex: 150.00" />
                                 <p className="text-xs text-gray-500 mt-1">Montant de départ dans le tiroir-caisse.</p>
                             </div>
@@ -303,7 +304,7 @@ const SalesRegisterView = ({ register, allRegisters, onDataChange }: { register:
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Montant (€)</label>
+                                <label className="block text-sm font-medium text-gray-700">Montant ({CURRENCY_LABEL})</label>
                                 <input type="number" step="0.01" min="0" value={movementAmount} onChange={e => setMovementAmount(e.target.value)} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
                             </div>
                             <div>
@@ -323,7 +324,7 @@ const SalesRegisterView = ({ register, allRegisters, onDataChange }: { register:
                                     <p className="font-medium">{m.reason}</p>
                                     <p className="text-sm text-gray-500">Par {m.user.name || m.user.email} le {new Date(m.createdAt).toLocaleTimeString('fr-FR')}</p>
                                     </div>
-                                    <span className={`font-bold text-lg ${m.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>{m.amount.toFixed(2)} €</span>
+                                    <span className={`font-bold text-lg ${m.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>{m.amount.toFixed(2)} {CURRENCY_LABEL}</span>
                                 </div>
                                 </li>
                             )) : <p className="text-sm text-gray-500 text-center py-4">Aucun mouvement manuel pour cette session.</p>}

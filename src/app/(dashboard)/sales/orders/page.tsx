@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 interface OrderSummary {
   id: string;
@@ -74,7 +75,7 @@ export default function OrdersListPage() {
                     {new Date(order.createdAt).toLocaleDateString('fr-FR')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.status}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.grandTotal.toFixed(2)} €</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.grandTotal.toFixed(2)} {CURRENCY_LABEL}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <a href={`/sales/orders/${order.id}`} className="text-indigo-600 hover:text-indigo-900">
                       Voir

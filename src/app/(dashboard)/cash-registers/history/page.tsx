@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 // ✅ NOUVEAU: Importer le type pour l'interface
 import { CashRegisterType } from '@prisma/client';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 interface SessionHistory {
   id: string;
@@ -39,7 +40,7 @@ const DifferenceCell = ({ value }: { value: number | null }) => {
 
   return (
     <span className={`font-bold ${colorClass}`}>
-      {value > 0 ? `+${formattedValue}` : formattedValue} €
+      {value > 0 ? `+${formattedValue}` : formattedValue} {CURRENCY_LABEL}
     </span>
   );
 };
@@ -117,9 +118,9 @@ export default function SessionsHistoryPage() {
                     <div>Ouvert: {session.openedByUser.name || session.openedByUser.email}</div>
                     <div>Fermé: {session.closedByUser?.name || session.closedByUser?.email || 'N/A'}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{session.openingBalance.toFixed(2)} €</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{session.expectedBalance?.toFixed(2) ?? 'N/A'} €</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{session.closingBalance?.toFixed(2) ?? 'N/A'} €</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{session.openingBalance.toFixed(2)} {CURRENCY_LABEL}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{session.expectedBalance?.toFixed(2) ?? 'N/A'} {CURRENCY_LABEL}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{session.closingBalance?.toFixed(2) ?? 'N/A'} {CURRENCY_LABEL}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
                     <DifferenceCell value={session.difference} />
                   </td>

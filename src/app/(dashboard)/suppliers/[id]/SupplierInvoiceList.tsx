@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { SupplierInvoiceStatus } from '@prisma/client';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- INTERFACES ---
 interface SupplierInvoice {
@@ -52,10 +53,10 @@ const InvoiceRow = ({ invoice, onRowClick }: { invoice: SupplierInvoice; onRowCl
         {new Date(invoice.dueDate).toLocaleDateString('fr-FR')}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
-        {invoice.total.toFixed(2)} €
+        {invoice.total.toFixed(2)} {CURRENCY_LABEL}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-red-600">
-        {invoice.remainingDue.toFixed(2)} €
+        {invoice.remainingDue.toFixed(2)} {CURRENCY_LABEL}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
         <StatusBadge status={invoice.status} />

@@ -4,6 +4,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import { CashRegisterType } from '@prisma/client';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- Interfaces ---
 interface CashRegister {
@@ -144,8 +145,8 @@ export default function ExpenseStatementPage() {
                     <tr key={tx.id}>
                         <td className="px-4 py-3 whitespace-nowrap text-gray-500">{new Date(tx.date).toLocaleDateString('fr-FR')}</td>
                         <td className="px-4 py-3 text-gray-700">{tx.reason}</td>
-                        <td className={`px-4 py-3 text-right font-semibold ${tx.amount >= 0 ? 'text-green-700' : 'text-red-700'}`}>{tx.amount.toFixed(2)} €</td>
-                        <td className="px-4 py-3 text-right font-mono text-gray-600">{tx.runningBalance.toFixed(2)} €</td>
+                        <td className={`px-4 py-3 text-right font-semibold ${tx.amount >= 0 ? 'text-green-700' : 'text-red-700'}`}>{tx.amount.toFixed(2)} {CURRENCY_LABEL}</td>
+                        <td className="px-4 py-3 text-right font-mono text-gray-600">{tx.runningBalance.toFixed(2)} {CURRENCY_LABEL}</td>
                     </tr>
                     ))}
                 </tbody>
@@ -155,15 +156,15 @@ export default function ExpenseStatementPage() {
             <div className="p-6 border rounded-lg bg-white shadow-sm">
                 <h3 className="text-xl font-semibold mb-4 border-b pb-2">Synthèse du Mois</h3>
                 <div className="space-y-3 text-sm">
-                    <div className="flex justify-between"><span>Solde d&apos;ouverture</span><span className="font-medium">{reportData.summary.openingBalance.toFixed(2)} €</span></div>
+                    <div className="flex justify-between"><span>Solde d&apos;ouverture</span><span className="font-medium">{reportData.summary.openingBalance.toFixed(2)} {CURRENCY_LABEL}</span></div>
                     <hr className="my-2"/>
-                    <div className="flex justify-between"><span>+ Total des apports</span><span className="font-medium text-green-600">{reportData.summary.totalPayIns.toFixed(2)} €</span></div>
-                    <div className="flex justify-between"><span>- Total des dépenses</span><span className="font-medium text-red-600">{reportData.summary.totalPayOuts.toFixed(2)} €</span></div>
+                    <div className="flex justify-between"><span>+ Total des apports</span><span className="font-medium text-green-600">{reportData.summary.totalPayIns.toFixed(2)} {CURRENCY_LABEL}</span></div>
+                    <div className="flex justify-between"><span>- Total des dépenses</span><span className="font-medium text-red-600">{reportData.summary.totalPayOuts.toFixed(2)} {CURRENCY_LABEL}</span></div>
                     <hr className="my-2"/>
-                    <div className="flex justify-between font-bold"><span>= Variation Nette</span><span>{reportData.summary.netChange.toFixed(2)} €</span></div>
+                    <div className="flex justify-between font-bold"><span>= Variation Nette</span><span>{reportData.summary.netChange.toFixed(2)} {CURRENCY_LABEL}</span></div>
                     <div className="flex justify-between text-base font-bold pt-2 border-t-2 border-gray-800 mt-4">
                         <span>SOLDE DE CLÔTURE</span>
-                        <span>{reportData.summary.closingBalance.toFixed(2)} €</span>
+                        <span>{reportData.summary.closingBalance.toFixed(2)} {CURRENCY_LABEL}</span>
                     </div>
                 </div>
             </div>

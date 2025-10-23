@@ -2,6 +2,7 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 interface CartItem {
   variantId: string;
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
     const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
 
     if (Math.abs(totalPaid - grandTotal) > 0.01) { // Utiliser une petite tolérance pour les comparaisons de flottants
-        return new NextResponse(JSON.stringify({ error: `Le total payé (${totalPaid.toFixed(2)}€) ne correspond pas au total de la vente (${grandTotal.toFixed(2)}€).` }), { status: 400 });
+        return new NextResponse(JSON.stringify({ error: `Le total payé (${totalPaid.toFixed(2)})${CURRENCY_LABEL} ne correspond pas au total de la vente (${grandTotal.toFixed(2)})${CURRENCY_LABEL}.` }), { status: 400 });
     }
 
     const result = await prisma.$transaction(async (tx) => {

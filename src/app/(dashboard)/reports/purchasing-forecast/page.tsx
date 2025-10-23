@@ -3,6 +3,7 @@
 
 import { useState, FormEvent } from 'react';
 import toast from 'react-hot-toast';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- TypeScript Interfaces ---
 interface WeeklyForecast {
@@ -39,7 +40,7 @@ const ForecastChart = ({ data }: { data: WeeklyForecast[] }) => {
                         <div 
                             className="w-full bg-blue-500 hover:bg-blue-600 transition-colors"
                             style={{ height: `${(item.amountDue / maxValue) * 100}%` }}
-                            title={`${item.amountDue.toFixed(2)} €`}
+                            title={`${item.amountDue.toFixed(2)} ${CURRENCY_LABEL}`}
                         ></div>
                         <span className="text-xs text-gray-500 mt-2">
                             {new Date(item.weekStartDate).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
@@ -121,7 +122,7 @@ export default function PurchasingForecastPage() {
             </button>
           </div>
           
-          <StatCard title="Total à Payer sur la Période" value={`${reportData.totalDueInPeriod.toFixed(2)} €`} />
+          <StatCard title="Total à Payer sur la Période" value={`${reportData.totalDueInPeriod.toFixed(2)} ${CURRENCY_LABEL}`} />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="border rounded-lg overflow-hidden bg-white shadow">
@@ -141,7 +142,7 @@ export default function PurchasingForecastPage() {
                             {new Date(item.weekStartDate).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-right font-semibold text-red-700">
-                            {item.amountDue.toFixed(2)} €
+                            {item.amountDue.toFixed(2)} {CURRENCY_LABEL}
                           </td>
                       </tr>
                       ))

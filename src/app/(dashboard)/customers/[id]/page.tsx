@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { UserPlus, Edit, Trash2, DollarSign, FileText } from 'lucide-react';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- Child Components for Tabs ---
 import CustomerCreditNoteList from './CustomerCreditNoteList'; 
@@ -87,7 +88,7 @@ const QuickActionModal = ({ isOpen, onClose, onSuccess, companyId, companyName }
                         {/* Payment Form Fields */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Montant (€) *</label>
+                                <label className="block text-sm font-medium text-gray-700">Montant ({CURRENCY_LABEL}) *</label>
                                 <input type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required autoFocus className="mt-1 block w-full p-2 border border-gray-300 rounded-md"/>
                             </div>
                             <div>
@@ -111,7 +112,7 @@ const QuickActionModal = ({ isOpen, onClose, onSuccess, companyId, companyName }
                         {/* Credit Note Form Fields */}
                         <div>
                             {/* CORRECTION: 'l'avoir' remplacé par 'l&apos;avoir' */}
-                            <label className="block text-sm font-medium text-gray-700">Montant de l&apos;avoir (€) *</label>
+                            <label className="block text-sm font-medium text-gray-700">Montant de l&apos;avoir ({CURRENCY_LABEL}) *</label>
                             <input type="number" step="0.01" min="0.01" value={creditAmount} onChange={(e) => setCreditAmount(e.target.value)} required autoFocus className="mt-1 block w-full p-2 border border-gray-300 rounded-md"/>
                         </div>
                         <div>
@@ -200,8 +201,8 @@ export default function CustomerDetailPage() {
         </div>
         
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <StatCard title={financials.balance === 0 ? "Solde" : balanceLabel} value={`${Math.abs(financials.balance).toFixed(2)} €`} colorClass={balanceColor} />
-            <StatCard title="Avoirs Disponibles" value={`${financials.availableCredit.toFixed(2)} €`} colorClass="text-blue-600" />
+            <StatCard title={financials.balance === 0 ? "Solde" : balanceLabel} value={`${Math.abs(financials.balance).toFixed(2)} ${CURRENCY_LABEL}`} colorClass={balanceColor} />
+            <StatCard title="Avoirs Disponibles" value={`${financials.availableCredit.toFixed(2)} ${CURRENCY_LABEL}`} colorClass="text-blue-600" />
             <StatCard title="Factures en Retard" value={financials.overdueInvoiceCount.toString()} colorClass={financials.overdueInvoiceCount > 0 ? 'text-red-600' : 'text-gray-900'} />
         </section>
 

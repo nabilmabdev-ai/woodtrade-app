@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 interface ReportData {
   sessionId: string;
@@ -78,7 +79,7 @@ export default function SessionReportPage() {
   if (loading) return <p className="p-8 text-center">Chargement du rapport...</p>;
   if (!report) return <p className="p-8 text-center text-red-500">Rapport introuvable.</p>;
 
-  const formatCurrency = (amount: number | null | undefined) => (amount ?? 0).toFixed(2) + ' €';
+  const formatCurrency = (amount: number | null | undefined) => (amount ?? 0).toFixed(2) + ` ${CURRENCY_LABEL}`;
   // CORRECTION MANUELLE ICI
   const formatDateTime = (date: string | null) => date ? new Date(date).toLocaleString('fr-FR') : 'N/A';
 

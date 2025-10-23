@@ -4,6 +4,7 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import toast from 'react-hot-toast';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- INTERFACES ---
 interface CreditNote {
@@ -141,7 +142,7 @@ export default function RecordPaymentModal({ isOpen, onClose, onSuccess, invoice
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-lg">
         <h2 className="text-2xl font-bold mb-4">Record a Payment</h2>
-        <p className="text-lg mb-6">Remaining due: <span className="font-bold">{remainingDue.toFixed(2)} €</span></p>
+        <p className="text-lg mb-6">Remaining due: <span className="font-bold">{remainingDue.toFixed(2)} {CURRENCY_LABEL}</span></p>
 
         {/* --- TABS SYSTEM --- */}
         <div className="border-b border-gray-200 mb-4">
@@ -162,7 +163,7 @@ export default function RecordPaymentModal({ isOpen, onClose, onSuccess, invoice
                     <option value="">-- Choose a payment --</option>
                     {availablePayments.map(p => (
                       <option key={p.id} value={p.id}>
-                        {`Payment of ${p.amount.toFixed(2)}€ (${p.method}) - Available: ${p.remainingAmount.toFixed(2)}€`}
+                        {`Payment of ${p.amount.toFixed(2)}${CURRENCY_LABEL} (${p.method}) - Available: ${p.remainingAmount.toFixed(2)}${CURRENCY_LABEL}`}
                       </option>
                     ))}
                   </select>
@@ -181,7 +182,7 @@ export default function RecordPaymentModal({ isOpen, onClose, onSuccess, invoice
                     <option value="">-- Choose a credit note --</option>
                     {availableCreditNotes.map(note => (
                       <option key={note.id} value={note.id}>
-                        {`Credit of ${note.remainingAmount.toFixed(2)}€ (${note.reason})`}
+                        {`Credit of ${note.remainingAmount.toFixed(2)}${CURRENCY_LABEL} (${note.reason})`}
                       </option>
                     ))}
                   </select>

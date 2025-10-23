@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import { SupplierPaymentStatus } from '@prisma/client';
 import SearchableDropdown, { DropdownItem } from '@/components/SearchableDropdown';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 // --- INTERFACES ---
 interface SupplierPayment {
@@ -155,8 +156,8 @@ export default function SupplierPaymentsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{p.supplier.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(p.paymentDate).toLocaleDateString('fr-FR')}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.method}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-800">{p.amount.toFixed(2)} €</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-blue-600">{p.remainingAmount.toFixed(2)} €</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-800">{p.amount.toFixed(2)} {CURRENCY_LABEL}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-blue-600">{p.remainingAmount.toFixed(2)} {CURRENCY_LABEL}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><StatusBadge status={p.status} /></td>
                   </tr>
                 ))
@@ -186,7 +187,7 @@ export default function SupplierPaymentsPage() {
               </div>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <div>
-                    <label htmlFor="amount" className="block text-sm font-medium text-gray-700">Montant (€) *</label>
+                    <label htmlFor="amount" className="block text-sm font-medium text-gray-700">Montant ({CURRENCY_LABEL}) *</label>
                     <input id="amount" type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md"/>
                  </div>
                  <div>

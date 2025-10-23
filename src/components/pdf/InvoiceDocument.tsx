@@ -1,6 +1,7 @@
 // src/components/pdf/InvoiceDocument.tsx
 import React from 'react';
 import { Page, Text, View, Document, StyleSheet } from '@react-pdf/renderer';
+import { CURRENCY_LABEL } from '@/lib/constants';
 
 interface InvoiceDetails {
   id: string;
@@ -158,8 +159,8 @@ export const InvoiceDocument = ({ invoice }: { invoice: InvoiceDetails }) => (
           <View style={styles.tableRow} key={line.id}>
             <Text style={styles.tdDescription}>{line.productVariant.product.name}</Text>
             <Text style={styles.td}>{line.quantity}</Text>
-            <Text style={styles.td}>{line.unitPrice.toFixed(2)} €</Text>
-            <Text style={styles.td}>{line.totalPrice.toFixed(2)} €</Text>
+            <Text style={styles.td}>{line.unitPrice.toFixed(2)} {CURRENCY_LABEL}</Text>
+            <Text style={styles.td}>{line.totalPrice.toFixed(2)} {CURRENCY_LABEL}</Text>
           </View>
         ))}
       </View>
@@ -168,11 +169,11 @@ export const InvoiceDocument = ({ invoice }: { invoice: InvoiceDetails }) => (
         <View style={styles.totalContainer}>
             <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>Sous-total</Text>
-                <Text style={styles.totalValue}>{invoice.total.toFixed(2)} €</Text>
+                <Text style={styles.totalValue}>{invoice.total.toFixed(2)} {CURRENCY_LABEL}</Text>
             </View>
             <View style={[styles.totalRow, styles.grandTotal]}>
                 <Text>Total</Text>
-                <Text>{invoice.total.toFixed(2)} €</Text>
+                <Text>{invoice.total.toFixed(2)} {CURRENCY_LABEL}</Text>
             </View>
         </View>
       </View>

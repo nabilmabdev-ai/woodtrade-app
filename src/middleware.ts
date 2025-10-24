@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next({ request: { headers: req.headers } })
 
-  // ✅ Use the new cookies API pattern for Next.js 15+
+  // Utilise le nouveau modèle de cookies pour Next.js 15+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -32,12 +32,12 @@ export async function middleware(req: NextRequest) {
 
   console.log(`[MIDDLEWARE] Path: ${pathname} | Session: ${session ? 'YES' : 'NO'}`)
 
-  // If user is not signed in and the current path is not the login page, redirect the user to the login page
+  // Si l'utilisateur n'est pas connecté et que le chemin actuel n'est pas la page de connexion, le rediriger vers la page de connexion
   if (!session && pathname !== '/login') {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  // If user is signed in and the current path is the login page, redirect the user to the home page
+  // Si l'utilisateur est connecté et que le chemin actuel est la page de connexion, le rediriger vers la page d'accueil
   if (session && pathname === '/login') {
     return NextResponse.redirect(new URL('/', req.url))
   }
@@ -47,57 +47,4 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: ['/((?!api/auth|_next/static|_next/image|favicon.ico).*)'],
-}```
-
-</details>
-
-### 2. Updated Authorization Helper
-
-The `src/lib/authorize.ts` helper, used by API routes for RBAC, is now updated to correctly retrieve the user session on the server. This fixes the authentication issue for all routes that use this function.
-
-<details>
-<summary>src/lib/authorize.ts</summary>
-
-```typescript
-import { Role, User } from '@prisma/client';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import { prisma } from './prisma';
-import { logRbacViolation } from './rbac-logger';
-import { Database } from './supabase-browser';
-
-export async function authorize(allowedRoles: Role[], action: string): Promise<User> {
-  const cookieStore = cookies();
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
-
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session) {
-    throw new Error('UNAUTHORIZED');
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-  });
-
-  if (!user) {
-    throw new Error('UNAUTHORIZED');
-  }
-
-  if (!allowedRoles.includes(user.role)) {
-    logRbacViolation(user.id, action);
-    throw new Error('FORBIDDEN');
-  }
-
-  return user;
 }

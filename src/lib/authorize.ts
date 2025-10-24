@@ -1,4 +1,4 @@
-
+// src/lib/authorize.ts
 import { Role, User } from '@prisma/client';
 import { createSupabaseServerClient } from './supabase-server';
 import { prisma } from './prisma';
@@ -17,7 +17,7 @@ export async function authorize(allowedRoles: Role[], action: string): Promise<U
   });
 
   if (!user) {
-    // Even if the session is valid, the user might not exist in our DB
+    // Même si la session est valide, l'utilisateur peut ne pas exister dans notre BDD
     throw new Error('UNAUTHORIZED');
   }
 

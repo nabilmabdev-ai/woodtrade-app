@@ -33,7 +33,7 @@ export default function UsersPage() {
     const fetchUsers = async () => {
       setLoading(true);
       try {
-        const response = await fetch('/api/users');
+        const response = await fetch('/api/users'); // This fetch call now implicitly sends credentials
         if (!response.ok) {
           throw new Error('Impossible de charger la liste des utilisateurs');
         }

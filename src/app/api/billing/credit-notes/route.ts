@@ -2,7 +2,7 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Role, CreditNoteStatus } from '@prisma/client';
+import { CreditNoteStatus } from '@prisma/client';
 import { authorize } from '@/lib/authorize';
 import { backendPermissionsMap } from '@/lib/permissions-map';
 
@@ -54,12 +54,12 @@ export async function POST(request: Request) {
       companyId: string;
       amount: number;
       reason: string;
-      date: string;
+      date: string; 
     };
 
     if (!companyId || !amount || amount <= 0 || !reason || !date) {
       return new NextResponse(
-        JSON.stringify({ error: "Données de l'avoir incomplètes ou invalides." }),
+        JSON.stringify({ error: 'Données de l\'avoir incomplètes ou invalides.' }),
         { status: 400 }
       );
     }
@@ -67,32 +67,25 @@ export async function POST(request: Request) {
     const newCreditNote = await prisma.creditNote.create({
       data: {
         companyId,
+        // ✅ CORRECTION: Use the correct field names 'initialAmount' and 'remainingAmount'
         initialAmount: amount,
         remainingAmount: amount,
         reason,
-        createdAt: new Date(date),
+        createdAt: new Date(date), // The field in the DB is `createdAt`
         status: CreditNoteStatus.AVAILABLE,
       },
     });
 
     return NextResponse.json(newCreditNote, { status: 201 });
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')
-    ) {
-      return new NextResponse(error.message, {
-        status: error.message === 'UNAUTHORIZED' ? 401 : 403,
-      });
-    }
 
-    console.error("Erreur lors de la création de l'avoir:", error);
-    const errorMessage = error instanceof Error ? error.message : 'Erreur interne.';
+  } catch (error) {
+    if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
+      return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
+    }
+    console.error('Erreur lors de la création de l\'avoir:', error);
+    const errorMessage = error instanceof Error ? error.message : "Erreur interne.";
     return new NextResponse(
-      JSON.stringify({
-        error: "Impossible de créer l'avoir",
-        details: errorMessage,
-      }),
+      JSON.stringify({ error: 'Impossible de créer l\'avoir', details: errorMessage }),
       { status: 500 }
     );
   }

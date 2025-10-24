@@ -34,6 +34,7 @@ export async function GET() {
 
   } catch (error) {
     if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
+      // This block will now only be hit for genuinely unauthenticated or unauthorized users.
       return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
     }
     console.error('Erreur lors de la récupération des utilisateurs:', error);

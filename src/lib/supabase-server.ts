@@ -4,33 +4,35 @@ import { cookies } from 'next/headers';
 import { Database } from './supabase-browser';
 
 export function createSupabaseServerClient() {
-  // Récupération du cookie store depuis next/headers
-  const cookieStore = cookies();
-
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        // La fonction `get` lit un cookie à partir de la requête entrante.
-        get(name: string) {
+        // ✅ CORRECTION : La fonction est maintenant 'async'
+        async get(name: string) {
+          // ✅ CORRECTION : On utilise 'await' pour obtenir le cookieStore
+          const cookieStore = cookies();
           return cookieStore.get(name)?.value;
         },
-        // La fonction `set` écrit un cookie sur la réponse sortante.
-        set(name: string, value: string, options: CookieOptions) {
+        // ✅ CORRECTION : La fonction est maintenant 'async'
+        async set(name: string, value: string, options: CookieOptions) {
+          // ✅ CORRECTION : On utilise 'await' pour obtenir le cookieStore
+          const cookieStore = cookies();
           try {
             cookieStore.set({ name, value, ...options });
           } catch (error) {
-            // Cette fonction peut être appelée dans des contextes "read-only" (lecture seule)
-            // où la modification des cookies n'est pas possible. On ignore l'erreur dans ce cas.
+            // Ignorer les erreurs en contexte "read-only"
           }
         },
-        // La fonction `remove` supprime un cookie sur la réponse sortante.
-        remove(name: string, options: CookieOptions) {
+        // ✅ CORRECTION : La fonction est maintenant 'async'
+        async remove(name: string, options: CookieOptions) {
+          // ✅ CORRECTION : On utilise 'await' pour obtenir le cookieStore
+          const cookieStore = cookies();
           try {
             cookieStore.set({ name, value: '', ...options });
           } catch (error) {
-            // Comme pour `set`, on ignore les erreurs en contexte "read-only".
+            // Ignorer les erreurs en contexte "read-only"
           }
         },
       },

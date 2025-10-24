@@ -50,3 +50,4 @@ next-env.d.ts
 
 # RBAC audit reports
 /rbac_audit
+.env*.local

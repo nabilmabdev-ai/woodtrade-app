@@ -5,7 +5,9 @@ import { prisma } from '@/lib/prisma';
 import { backendPermissionsMap } from '@/lib/permissions-map';
 import { authorize } from '@/lib/authorize';
 
-export const runtime = "nodejs"; // Force Node.js runtime to ensure cookie access for Supabase SSR client
+// ✅ THE FIX: Force this route to run in the Node.js runtime.
+// This ensures that the Supabase server client can always access request cookies.
+export const runtime = "nodejs";
 
 // Define the roles that are allowed to access this endpoint.
 const ALLOWED_ROLES = backendPermissionsMap['/users']['GET'];
@@ -13,12 +15,12 @@ const ALLOWED_ROLES = backendPermissionsMap['/users']['GET'];
 /**
  * Gère la requête GET pour récupérer tous les utilisateurs.
  *
- * ✅ SÉCURITÉ APPLIQUÉE : Cette route est maintenant protégée. Seuls les utilisateurs
+ * SÉCURITÉ APPLIQUÉE : Cette route est maintenant protégée. Seuls les utilisateurs
  * avec un rôle `ADMIN` ou `SUPER_ADMIN` peuvent récupérer la liste complète.
  */
 export async function GET() {
   try {
-    // authorize() will now correctly find the session because the runtime is nodejs
+    // With the runtime set to "nodejs", authorize() will now find the session.
     await authorize(ALLOWED_ROLES, 'GET /users');
 
     // If the user is authorized, proceed to fetch the data.
@@ -32,7 +34,6 @@ export async function GET() {
 
   } catch (error) {
     if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
-      // This block will now only be hit for genuinely unauthenticated or unauthorized users.
       return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
     }
     console.error('Erreur lors de la récupération des utilisateurs:', error);

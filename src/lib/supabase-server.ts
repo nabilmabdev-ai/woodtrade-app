@@ -9,30 +9,26 @@ export function createSupabaseServerClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        // ✅ CORRECTION : La fonction est maintenant 'async'
         async get(name: string) {
-          // ✅ CORRECTION : On utilise 'await' pour obtenir le cookieStore
-          const cookieStore = cookies();
+          // ✅ CORRECTION DÉFINITIVE : 'await' est ajouté ici.
+          const cookieStore = await cookies();
           return cookieStore.get(name)?.value;
         },
-        // ✅ CORRECTION : La fonction est maintenant 'async'
         async set(name: string, value: string, options: CookieOptions) {
-          // ✅ CORRECTION : On utilise 'await' pour obtenir le cookieStore
-          const cookieStore = cookies();
           try {
+            const cookieStore = await cookies();
             cookieStore.set({ name, value, ...options });
           } catch (error) {
-            // Ignorer les erreurs en contexte "read-only"
+            // Cette erreur peut se produire dans des environnements en lecture seule (comme les Server Components),
+            // il est donc sûr de l'ignorer.
           }
         },
-        // ✅ CORRECTION : La fonction est maintenant 'async'
         async remove(name: string, options: CookieOptions) {
-          // ✅ CORRECTION : On utilise 'await' pour obtenir le cookieStore
-          const cookieStore = cookies();
           try {
+            const cookieStore = await cookies();
             cookieStore.set({ name, value: '', ...options });
           } catch (error) {
-            // Ignorer les erreurs en contexte "read-only"
+            // Comme pour `set`, ignorer en toute sécurité.
           }
         },
       },

@@ -4,31 +4,25 @@ import { cookies } from 'next/headers';
 import { Database } from './supabase-browser';
 
 export function createSupabaseServerClient() {
-  const cookieStore = cookies();
-
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
+        // The `get` function is now `async`
+        async get(name: string) {
+          const cookieStore = await cookies();
           return cookieStore.get(name)?.value;
         },
-        set(name: string, value: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value, ...options });
-          } catch (error) {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing sessions.
-          }
+        // The `set` function is now `async`
+        async set(name: string, value: string, options: CookieOptions) {
+          const cookieStore = await cookies();
+          cookieStore.set({ name, value, ...options });
         },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: '', ...options });
-          } catch (error) {
-            // The `delete` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing sessions.
-          }
+        // The `remove` function is now `async`
+        async remove(name: string, options: CookieOptions) {
+          const cookieStore = await cookies();
+          cookieStore.set({ name, value: '', ...options });
         },
       },
     }

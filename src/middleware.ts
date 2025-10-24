@@ -1,24 +1,43 @@
 // src/middleware.ts
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
-import { NextResponse, type NextRequest } from 'next/server';
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(req: NextRequest) {
-  // create a response wrapper
-  const res = NextResponse.next();
+  // Create a response object that we can modify
+  const res = NextResponse.next({
+    request: {
+      headers: req.headers,
+    },
+  });
 
-  // createMiddlewareClient gère cookies/NextResponse automatiquement
-  const supabase = createMiddlewareClient({ req, res });
+  // Create a Supabase client configured for Middleware
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return req.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          // Update the request's cookies for the current server-side render
+          req.cookies.set({ name, value, ...options });
+          // Also update the response's cookies to send back to the browser
+          res.cookies.set({ name, value, ...options });
+        },
+        remove(name: string, options: CookieOptions) {
+          // Update the request's and response's cookies
+          req.cookies.set({ name, value: '', ...options });
+          res.cookies.set({ name, value: '', ...options });
+        },
+      },
+    }
+  );
 
+  // This is the crucial step: It attempts to refresh the session cookie.
   const { data: { session } } = await supabase.auth.getSession();
 
-  if (!session) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      console.log('[MIDDLEWARE LOG] getSession() null mais getUser() ok:', user.email);
-      // tu peux considérer la requête comme authentifiée (fallback)
-    }
-  }
-
+  // Redirect logic
   const { pathname } = req.nextUrl;
   if (!session && pathname !== '/login') {
     return NextResponse.redirect(new URL('/login', req.url));
@@ -31,5 +50,7 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api/auth|_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    '/((?!api/auth|_next/static|_next/image|favicon.ico).*)',
+  ],
 };

@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { CashRegisterSessionStatus, Role, CashMovementType } from '@prisma/client';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 /**
@@ -14,7 +14,18 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            get(name: string) {
+              return cookieStore.get(name)?.value
+            },
+          },
+        }
+    );
 
   // Define roles that are allowed to close a session
   const ALLOWED_ROLES: Role[] = [Role.CASHIER, Role.MANAGER, Role.ADMIN, Role.SUPER_ADMIN];
@@ -110,9 +121,7 @@ export async function POST(
                 sessionId: sessionId,
                 userId: session.user.id,
                 amount: adjustmentAmount,
-                // --- ✅ BUILD FIX APPLIED HERE ---
-                // Use a valid CashMovementType based on the sign of the adjustment.
-                type: adjustmentAmount > 0 ? CashMovementType.PAY_IN : CashMovementType.PAY_OUT,
+                type: adjustmentAmount > 0 ? CashMovementType.ADJUSTMENT : CashMovementType.ADJUSTMENT,
                 reason: `Ajustement de clôture (Écart de ${difference.toFixed(2)} MAD)`,
             }
         });

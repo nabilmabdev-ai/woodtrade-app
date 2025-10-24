@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { SupplierInvoiceStatus, SupplierPaymentStatus } from '@prisma/client';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Role } from '@prisma/client';
 
@@ -13,7 +13,7 @@ const ALLOWED_ROLES: Role[] = [Role.ADMIN, Role.SUPER_ADMIN, Role.ACCOUNTANT];
 /**
  * Gère la requête POST pour annuler (void) une facture fournisseur.
  *
- * ✅ SÉCURITÉ ET ROBUSTESSE APPLIQUÉES :
+ * SÉCURITÉ ET ROBUSTESSE APPLIQUÉES :
  * 1.  Vérifie les droits de l'utilisateur.
  * 2.  Empêche l'annulation si des marchandises ont déjà été réceptionnées.
  * 3.  Recalcule correctement le statut des paiements qui étaient affectés.
@@ -23,7 +23,18 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            get(name: string) {
+              return cookieStore.get(name)?.value
+            },
+          },
+        }
+    );
 
   try {
     // 1. Authentification et Autorisation
@@ -48,7 +59,7 @@ export async function POST(
       if (!invoice) throw new Error('Facture non trouvée.');
       if (invoice.status === SupplierInvoiceStatus.VOID) return invoice; // Déjà annulée.
 
-      // 3. [FIX] SÉCURITÉ MÉTIER : Vérifier si des articles ont été réceptionnés.
+      // 3. SÉCURITÉ MÉTIER : Vérifier si des articles ont été réceptionnés.
       const hasReceivedItems = invoice.lines.some(line => line.receivedQuantity > 0);
       if (hasReceivedItems) {
         throw new Error("Impossible d'annuler : des articles de cette facture ont déjà été réceptionnés en stock. Vous devez d'abord annuler la réception via un ajustement de stock négatif.");
@@ -67,7 +78,7 @@ export async function POST(
         data: { status: SupplierInvoiceStatus.VOID },
       });
       
-      // 6. [FIX] Mettre à jour le statut de chaque paiement affecté
+      // 6. Mettre à jour le statut de chaque paiement affecté
       for (const paymentId of paymentIdsToUpdate) {
         const payment = await tx.supplierPayment.findUniqueOrThrow({
           where: { id: paymentId },

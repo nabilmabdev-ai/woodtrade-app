@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { SupplierPaymentStatus, Prisma, Role } from '@prisma/client';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 // Define the roles that are allowed to view financial data for suppliers.
@@ -12,14 +12,25 @@ const ALLOWED_ROLES: Role[] = [Role.ACCOUNTANT, Role.ADMIN, Role.SUPER_ADMIN, Ro
 /**
  * Gère la requête GET pour récupérer les paiements d'un fournisseur.
  *
- * ✅ SÉCURITÉ APPLIQUÉE : Seuls les utilisateurs avec un rôle autorisé peuvent
+ * SÉCURITÉ APPLIQUÉE : Seuls les utilisateurs avec un rôle autorisé peuvent
  * accéder à ces informations financières sensibles.
  */
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            get(name: string) {
+              return cookieStore.get(name)?.value
+            },
+          },
+        }
+    );
 
   try {
     // 1. Authentification : Vérifier la session de l'utilisateur.

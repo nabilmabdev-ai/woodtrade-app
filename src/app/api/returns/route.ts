@@ -2,7 +2,7 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Role, CashRegisterSessionStatus } from '@prisma/client';
 
@@ -22,14 +22,25 @@ const ALLOWED_ROLES: Role[] = [Role.CASHIER, Role.ADMIN, Role.SUPER_ADMIN, Role.
 /**
  * Gère la requête POST pour traiter un retour de produit.
  *
- * ✅ SÉCURITÉ, VALIDATION ET INTÉGRITÉ APPLIQUÉES :
+ * SÉCURITÉ, VALIDATION ET INTÉGRITÉ APPLIQUÉES :
  * 1.  Vérifie que l'utilisateur a un rôle autorisé.
  * 2.  Valide que la facture fournie appartient bien à la commande originale.
  * 3.  Vérifie la validité de la session de caisse pour les remboursements en espèces.
  * 4.  Crée un mouvement de stock (InventoryMovement) pour une traçabilité complète.
  */
 export async function POST(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            get(name: string) {
+              return cookieStore.get(name)?.value
+            },
+          },
+        }
+    );
 
   try {
     // 1. SÉCURITÉ : Vérification de l'utilisateur et de son rôle.
@@ -73,7 +84,7 @@ export async function POST(request: Request) {
     const result = await prisma.$transaction(async (tx) => {
       // 3. VÉRIFICATIONS D'INTÉGRITÉ DANS LA TRANSACTION
       
-      // [FIX] Vérifier que la facture fournie appartient bien à la commande originale.
+      // Vérifier que la facture fournie appartient bien à la commande originale.
       const originalOrder = await tx.customerOrder.findUnique({
         where: { id: originalOrderId },
         include: { invoices: true }
@@ -82,7 +93,7 @@ export async function POST(request: Request) {
       const invoiceExistsOnOrder = originalOrder.invoices.some(inv => inv.id === originalInvoiceId);
       if (!invoiceExistsOnOrder) throw new Error("La facture fournie ne correspond pas à la commande originale.");
       
-      // [FIX] Vérifier la validité de la session de caisse si nécessaire.
+      // Vérifier la validité de la session de caisse si nécessaire.
       if (outcome.type === 'REFUND' && outcome.method === 'CASH') {
         const cashSession = await tx.cashRegisterSession.findUnique({ where: { id: outcome.cashRegisterSessionId } });
         if (!cashSession || cashSession.status !== CashRegisterSessionStatus.OPEN) {
@@ -112,10 +123,9 @@ export async function POST(request: Request) {
               cashRegisterSessionId: outcome.method === 'CASH' ? outcome.cashRegisterSessionId : null,
           }
         });
-        // On pourrait aussi vouloir mettre à jour le statut de la facture originale à 'REFUNDED'.
         await tx.invoice.update({
             where: { id: originalInvoiceId },
-            data: { status: 'REFUNDED' } // Assurez-vous que ce statut existe dans votre enum InvoiceStatus
+            data: { status: 'REFUNDED' }
         });
       } else if (outcome.type === 'CREDIT_NOTE') {
         await tx.creditNote.create({
@@ -125,10 +135,6 @@ export async function POST(request: Request) {
             remainingAmount: totalAmount,
             reason: `Avoir sur retour commande #${originalOrder.id.substring(0,8)}`,
             status: 'AVAILABLE',
-            // --- ✅ FIX APPLIED HERE ---
-            // The `returnOrderId` property has been removed to match the Prisma schema.
-            // To re-enable this link, add a `returnOrder` relation to the `CreditNote` model in your `schema.prisma` file.
-            // returnOrderId: returnOrder.id, 
           }
         });
       }
@@ -138,14 +144,12 @@ export async function POST(request: Request) {
         const inventoryItem = await tx.inventory.findFirstOrThrow({ where: { productVariantId: item.productVariantId } });
         await tx.inventory.update({ where: { id: inventoryItem.id }, data: { quantity: { increment: item.quantity } } });
         
-        // The userId is also removed here to prevent a similar error if the schema is inconsistent.
         await tx.inventoryMovement.create({
           data: {
             inventoryId: inventoryItem.id,
             quantity: item.quantity,
             type: 'RETURN_IN',
             reason: `Retour commande #${originalOrder.id.substring(0, 8)}. Ref Retour: ${returnOrder.id}`,
-            // userId: user.id, // Lier le mouvement à l'utilisateur qui a fait l'action.
           }
         });
       }

@@ -1,37 +1,32 @@
-// src/app/api/test-db/route.ts
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    // Ce test n'utilise PAS les helpers de Next.js, mais une connexion directe
-    // avec la clé de service, qui a tous les droits.
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE) {
-        throw new Error("SUPABASE_URL or SUPABASE_SERVICE_ROLE is not defined in environment variables.");
-    }
+    console.log("Attempting to connect to the database to perform a count...");
 
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE
-    );
+    const userCount = await prisma.user.count();
 
-    console.log("Tentative de connexion avec la clé de service...");
-    const { data, error, count } = await supabaseAdmin.from('users').select('*', { count: 'exact', head: true });
+    console.log(`Successfully connected! Found ${userCount} users.`);
 
-    if (error) {
-      throw new Error(`Erreur de Supabase (service_role): ${error.message}`);
-    }
-
-    console.log(`Connexion réussie avec la clé de service ! Nombre d'utilisateurs: ${count}`);
     return NextResponse.json({
       success: true,
-      message: `Connexion serveur-à-serveur réussie. ${count} utilisateurs trouvés.`,
+      message: `Connection successful. Found ${userCount} users.`,
     });
 
   } catch (error) {
-    console.error("!!! ÉCHEC DE LA CONNEXION SERVEUR-À-SERVEUR !!!");
+    console.error("!!! DATABASE CONNECTION FAILED !!!");
     console.error(error); 
-    const errorMessage = error instanceof Error ? error.message : "Erreur inconnue.";
-    return new NextResponse(JSON.stringify({ success: false, message: "Échec de la connexion.", error: errorMessage }), { status: 500 });
+
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+    
+    return new NextResponse(
+      JSON.stringify({
+        success: false,
+        message: "Failed to connect to the database.",
+        error: errorMessage, 
+      }),
+      { status: 500 }
+    );
   }
 }

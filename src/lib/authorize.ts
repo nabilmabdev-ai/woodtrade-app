@@ -3,22 +3,14 @@ import { Role, User } from '@prisma/client';
 import { createSupabaseServerClient } from './supabase-server';
 import { prisma } from './prisma';
 import { logRbacViolation } from './rbac-logger';
-import { cookies } from 'next/headers';
 
-// ✅ CORRECTION DÉFINITIVE : Ajout du mot-clé "export" ici.
 export async function authorize(allowedRoles: Role[], action: string): Promise<User> {
   console.log(`[AUTH LOG] Authorize started for action: ${action}`);
 
-  try {
-    const cookieStore = await cookies();
-    const allCookies = cookieStore.getAll();
-    console.log('[AUTH LOG] Incoming cookie names:', allCookies.map(c => c.name).join(', ') || 'NONE');
-    console.log('[AUTH LOG] SUPABASE_URL configured:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
-  } catch (e) {
-    console.error('[AUTH LOG] Error reading cookies/env:', e);
-  }
-
+  // The client is created synchronously. No 'await' here.
   const supabase = createSupabaseServerClient();
+
+  // The call to get the session is asynchronous and must be awaited.
   const { data: { session }, error: supabaseError } = await supabase.auth.getSession();
 
   if (supabaseError) {

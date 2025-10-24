@@ -5,18 +5,19 @@ import { prisma } from '@/lib/prisma';
 import { backendPermissionsMap } from '@/lib/permissions-map';
 import { authorize } from '@/lib/authorize';
 
-// ✅ THE FIX: Force this route to run in the Node.js runtime.
-// This ensures that the Supabase server client can always access request cookies.
+// ✅ LA CORRECTION CLÉ EST ICI :
+// Cette ligne force la route à s'exécuter dans l'environnement Node.js.
+// Sans cela, elle pourrait s'exécuter dans un environnement "Edge" où l'accès
+// aux cookies via `next/headers` (utilisé par notre client Supabase) n'est pas garanti.
 export const runtime = "nodejs";
 
 const ALLOWED_ROLES = backendPermissionsMap['/users']['GET'];
 
 export async function GET() {
-  // You can keep this log for confirmation after deploying the fix
-  console.log("[API /users] GET request received."); 
+  console.log("[API /users] Requête GET reçue."); 
   
   try {
-    // authorize() will now succeed because the runtime is correct
+    // La fonction authorize() devrait maintenant réussir grâce aux deux corrections.
     await authorize(ALLOWED_ROLES, 'GET /users');
 
     const users = await prisma.user.findMany({

@@ -1,44 +1,82 @@
+// src/app/api/billing/invoices/route.ts
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Role } from '@prisma/client';
 import { authorize } from '@/lib/authorize';
 import { backendPermissionsMap } from '@/lib/permissions-map';
+import { InvoiceStatus } from '@prisma/client';
 
 const ALLOWED_ROLES = backendPermissionsMap['/billing/invoices']['POST'];
 
 /**
- * Gère la requête POST pour créer une nouvelle facture.
+ * Gère la requête POST pour créer une nouvelle commande et sa facture associée.
+ * This has been corrected to follow the schema: Invoice -> CustomerOrder -> Company.
  */
 export async function POST(request: Request) {
   try {
-    await authorize(ALLOWED_ROLES, 'POST /billing/invoices');
+    const user = await authorize(ALLOWED_ROLES, 'POST /billing/invoices');
 
     const body = await request.json();
-    const { companyId, amount, dueDate, items } = body as {
+    const { companyId, dueDate, items } = body as {
       companyId: string;
-      amount: number;
       dueDate: string;
-      items: { productId: string; quantity: number; unitPrice: number }[];
+      items: { productVariantId: string; quantity: number; unitPrice: number }[];
     };
 
-    if (!companyId || !amount || amount <= 0 || !dueDate || !items || items.length === 0) {
+    if (!companyId || !dueDate || !items || items.length === 0) {
       return new NextResponse(
         JSON.stringify({ error: 'Données de la facture incomplètes ou invalides.' }),
         { status: 400 }
       );
     }
 
-    const newInvoice = await prisma.invoice.create({
-      data: {
-        companyId,
-        amount,
-        dueDate: new Date(dueDate),
-        status: 'PENDING',
-        invoiceItems: {
-          create: items,
+    const newInvoice = await prisma.$transaction(async (tx) => {
+      // 1. Find a default contact for the company.
+      const contact = await tx.contact.findFirst({
+        where: { companyId: companyId },
+      });
+
+      if (!contact) {
+        throw new Error(`Aucun contact trouvé pour l'entreprise avec l'ID: ${companyId}`);
+      }
+      
+      // 2. Calculate totals from the line items.
+      const subtotal = items.reduce((acc, item) => acc + item.quantity * item.unitPrice, 0);
+      // For now, no global discount is applied here.
+      const grandTotal = subtotal;
+
+      // 3. Create the CustomerOrder record.
+      const newOrder = await tx.customerOrder.create({
+        data: {
+          companyId: companyId,
+          contactId: contact.id,
+          userId: user.id,
+          subtotal: subtotal,
+          grandTotal: grandTotal,
+          status: 'DELIVERED', // Assume the order is fulfilled as it's being invoiced.
+          lines: {
+            create: items.map(item => ({
+              productVariantId: item.productVariantId,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              totalPrice: item.quantity * item.unitPrice,
+            })),
+          },
         },
-      },
+      });
+
+      // 4. Create the Invoice linked to the new order.
+      const invoice = await tx.invoice.create({
+        data: {
+          orderId: newOrder.id,
+          status: InvoiceStatus.UNPAID,
+          subtotal: subtotal,
+          total: grandTotal,
+          dueDate: new Date(dueDate),
+        },
+      });
+
+      return invoice;
     });
 
     return NextResponse.json(newInvoice, { status: 201 });

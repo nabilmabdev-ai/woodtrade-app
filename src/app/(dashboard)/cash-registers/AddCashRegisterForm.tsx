@@ -5,8 +5,8 @@
 import { useState, FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import { CashRegisterType, Role } from '@prisma/client';
-import { useAuth } from '@/src/app/auth/provider';
-import * as permissions from '@/src/lib/permissions';
+import { useAuth } from '@/hooks/use-auth';
+import * as permissions from '@/lib/permissions';
 
 interface AddCashRegisterFormProps {
   onRegisterAdded: () => void;
@@ -57,7 +57,7 @@ export default function AddCashRegisterForm({ onRegisterAdded, onClose }: AddCas
   if (!userRole || !permissions.canAddCashRegister(userRole)) {
     return (
       <div className="p-6 text-center text-red-600">
-        <p>Vous n'avez pas la permission d'ajouter une caisse.</p>
+        <p>Vous n&apos;avez pas la permission d&apos;ajouter une caisse.</p>
       </div>
     );
   }

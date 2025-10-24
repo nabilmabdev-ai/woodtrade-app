@@ -1,9 +1,8 @@
+// src/app/api/cash-register-sessions/route.ts
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { CashRegisterSessionStatus, Role } from '@prisma/client';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { CashRegisterSessionStatus } from '@prisma/client';
 import { backendPermissionsMap } from '@/lib/permissions-map';
 import { authorize } from '@/lib/authorize';
 

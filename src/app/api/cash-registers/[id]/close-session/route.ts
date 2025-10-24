@@ -1,7 +1,8 @@
+// src/app/api/cash-registers/[id]/close-session/route.ts
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Role } from '@prisma/client';
+// ✅ CORRECTION : L'importation de 'Role' n'est plus nécessaire ici.
 import { authorize } from '@/lib/authorize';
 import { backendPermissionsMap } from '@/lib/permissions-map';
 
@@ -10,19 +11,22 @@ const ALLOWED_ROLES = backendPermissionsMap['/cash-registers/[id]/close-session'
 /**
  * Gère la requête POST pour fermer une session de caisse.
  */
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     const user = await authorize(ALLOWED_ROLES, 'POST /cash-registers/[id]/close-session');
 
-    const { id: sessionId } = params;
+    const { id: sessionId } = await context.params;
     const body = await request.json();
     const { closingBalance } = body as {
       closingBalance: number;
     };
 
-    if (!closingBalance) {
+    if (closingBalance === undefined) {
       return new NextResponse(
-        JSON.stringify({ error: 'Données de clôture de session incomplètes ou invalides.' }),
+        JSON.stringify({ error: 'Le montant de clôture est requis.' }),
         { status: 400 }
       );
     }
@@ -43,7 +47,9 @@ export async function POST(request: Request, { params }: { params: { id: string 
     if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
       return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
     }
-    console.error('Erreur lors de la clôture de la session:', error);
+    
+    const idFromContext = context.params ? (await context.params).id : 'inconnu';
+    console.error(`Erreur lors de la clôture de la session ${idFromContext}:`, error);
     const errorMessage = error instanceof Error ? error.message : "Erreur interne.";
     return new NextResponse(
       JSON.stringify({ error: 'Impossible de fermer la session', details: errorMessage }),

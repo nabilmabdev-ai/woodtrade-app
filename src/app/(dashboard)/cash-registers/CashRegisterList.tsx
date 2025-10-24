@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { CashRegisterType, Role } from '@prisma/client';
 import { MoreVertical } from 'lucide-react';
-import { useAuth } from '@/src/app/auth/provider';
-import * as permissions from '@/src/lib/permissions';
+import { useAuth } from '@/hooks/use-auth';
+import * as permissions from '@/lib/permissions';
 
 interface CashRegisterWithBalance {
   id: string;

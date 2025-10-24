@@ -1,7 +1,8 @@
+// src/app/api/billing/credit-notes/route.ts
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Role } from '@prisma/client';
+import { Role, CreditNoteStatus } from '@prisma/client';
 import { authorize } from '@/lib/authorize';
 import { backendPermissionsMap } from '@/lib/permissions-map';
 
@@ -29,6 +30,9 @@ export async function GET() {
     return NextResponse.json(creditNotes);
 
   } catch (error) {
+    if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
+      return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
+    }
     console.error('Erreur lors de la récupération des avoirs:', error);
     const errorMessage = error instanceof Error ? error.message : "Erreur interne.";
     return new NextResponse(
@@ -55,7 +59,7 @@ export async function POST(request: Request) {
 
     if (!companyId || !amount || amount <= 0 || !reason || !date) {
       return new NextResponse(
-        JSON.stringify({ error: 'Données de l\'avoir incomplètes ou invalides.' }),
+        JSON.stringify({ error: "Données de l'avoir incomplètes ou invalides." }),
         { status: 400 }
       );
     }
@@ -63,22 +67,32 @@ export async function POST(request: Request) {
     const newCreditNote = await prisma.creditNote.create({
       data: {
         companyId,
-        amount,
+        initialAmount: amount,
+        remainingAmount: amount,
         reason,
-        date: new Date(date),
+        createdAt: new Date(date),
+        status: CreditNoteStatus.AVAILABLE,
       },
     });
 
     return NextResponse.json(newCreditNote, { status: 201 });
-
   } catch (error) {
-    if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
-      return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
+    if (
+      error instanceof Error &&
+      (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')
+    ) {
+      return new NextResponse(error.message, {
+        status: error.message === 'UNAUTHORIZED' ? 401 : 403,
+      });
     }
-    console.error('Erreur lors de la création de l\'avoir:', error);
-    const errorMessage = error instanceof Error ? error.message : "Erreur interne.";
+
+    console.error("Erreur lors de la création de l'avoir:", error);
+    const errorMessage = error instanceof Error ? error.message : 'Erreur interne.';
     return new NextResponse(
-      JSON.stringify({ error: 'Impossible de créer l\'avoir', details: errorMessage }),
+      JSON.stringify({
+        error: "Impossible de créer l'avoir",
+        details: errorMessage,
+      }),
       { status: 500 }
     );
   }

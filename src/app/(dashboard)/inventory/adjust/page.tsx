@@ -5,8 +5,8 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { useAuth } from '@/src/app/auth/provider';
-import * as permissions from '@/src/lib/permissions';
+import { useAuth } from '@/hooks/use-auth';
+import * as permissions from '@/lib/permissions';
 import { Role } from '@prisma/client';
 
 // --- ✅ INTERFACES AJOUTÉES POUR LA SÉCURITÉ DE TYPE ---
@@ -99,9 +99,9 @@ export default function AdjustInventoryPage() {
     return (
       <main className="p-8 text-center">
         <h1 className="text-2xl font-bold text-red-600">Accès non autorisé</h1>
-        <p className="mt-2">Vous n'avez pas la permission de voir cette page.</p>
+        <p className="mt-2">Vous n&apos;avez pas la permission de voir cette page.</p>
         <Link href="/inventory" className="mt-4 inline-block text-blue-600 hover:underline">
-          Retour à l'inventaire
+          Retour à l&apos;inventaire
         </Link>
       </main>
     );

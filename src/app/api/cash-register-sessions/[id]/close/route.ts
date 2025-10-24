@@ -8,7 +8,7 @@ import { cookies } from 'next/headers';
 
 /**
  * Gère la requête POST pour fermer une session de caisse.
- * ✅ SÉCURITÉ APPLIQUÉE : Seuls les utilisateurs autorisés peuvent fermer une session.
+ * SÉCURITÉ APPLIQUÉE : Seuls les utilisateurs autorisés peuvent fermer une session.
  */
 export async function POST(
   request: NextRequest,
@@ -102,12 +102,17 @@ export async function POST(
 
       // If there is a difference and the user wants to create an adjustment
       if (Math.abs(difference) >= 0.01 && createAdjustment) {
+        // The amount of the movement is the inverse of the difference to balance the register.
+        const adjustmentAmount = -difference;
+
         await tx.cashMovement.create({
             data: {
                 sessionId: sessionId,
                 userId: session.user.id,
-                amount: -difference, // We want to add the inverse of the difference to balance it
-                type: CashMovementType.ADJUSTMENT,
+                amount: adjustmentAmount,
+                // --- ✅ BUILD FIX APPLIED HERE ---
+                // Use a valid CashMovementType based on the sign of the adjustment.
+                type: adjustmentAmount > 0 ? CashMovementType.PAY_IN : CashMovementType.PAY_OUT,
                 reason: `Ajustement de clôture (Écart de ${difference.toFixed(2)} MAD)`,
             }
         });

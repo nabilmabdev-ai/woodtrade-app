@@ -6,8 +6,8 @@ import toast from 'react-hot-toast';
 import { PaymentStatus, Role } from '@prisma/client';
 import SearchableDropdown, { DropdownItem } from '@/components/SearchableDropdown';
 import { CURRENCY_LABEL } from '@/lib/constants';
-import { useAuth } from '@/src/app/auth/provider';
-import * as permissions from '@/src/lib/permissions';
+import { useAuth } from '@/hooks/use-auth';
+import * as permissions from '@/lib/permissions';
 
 // --- INTERFACES ---
 interface Payment {

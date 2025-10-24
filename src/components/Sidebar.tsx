@@ -10,8 +10,8 @@ import {
   ChevronsLeft, ChevronsRight, ChevronDown, ChevronUp, Store,
   GanttChartSquare, ClipboardCheck, ClipboardList, Users,
 } from 'lucide-react';
-import { useAuth } from '@/src/app/auth/provider';
-import * as permissions from '@/src/lib/permissions';
+import { useAuth } from '@/hooks/use-auth';
+import * as permissions from '@/lib/permissions';
 import { Role } from '@prisma/client';
 
 interface NavLink {

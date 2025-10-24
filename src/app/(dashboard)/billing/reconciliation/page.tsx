@@ -5,9 +5,9 @@ import { useState, useEffect, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import SearchableDropdown, { DropdownItem } from '@/components/SearchableDropdown';
 import { CURRENCY_LABEL } from '@/lib/constants';
-import { useAuth } from '@/src/app/auth/provider';
-import * as permissions from '@/src/lib/permissions';
-import { Role } from '@prisma/client';
+import { useAuth } from '@/hooks/use-auth';
+import * as permissions from '@/lib/permissions';
+// ✅ FIX: The unused 'Role' import has been removed.
 
 // --- INTERFACES ---
 
@@ -42,7 +42,7 @@ interface UnpaidInvoice {
 
 export default function CustomerReconciliationPage() {
   const { user } = useAuth();
-  const userRole = user?.role as Role;
+  const userRole = user?.role; // Directly use role from user object
 
   // --- STATE MANAGEMENT ---
   const [customers, setCustomers] = useState<DropdownItem[]>([]);
@@ -85,7 +85,6 @@ export default function CustomerReconciliationPage() {
               throw new Error('Could not load customer financial data.');
           }
           
-          // CORRECTION @typescript-eslint/no-explicit-any: Typage des données JSON
           const paymentsData: ApiPayment[] = await paymentsRes.json();
           const creditNotesData: ApiCreditNote[] = await creditNotesRes.json();
           const invoicesData: UnpaidInvoice[] = await invoicesRes.json();
@@ -172,7 +171,7 @@ export default function CustomerReconciliationPage() {
     return (
       <main className="p-8 text-center">
         <h1 className="text-2xl font-bold text-red-600">Accès non autorisé</h1>
-        <p className="mt-2">Vous n'avez pas la permission de voir cette page.</p>
+        <p className="mt-2">Vous n&apos;avez pas la permission de voir cette page.</p>
       </main>
     );
   }

@@ -4,8 +4,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { InvoiceStatus, Role } from '@prisma/client';
 import { CURRENCY_LABEL } from '@/lib/constants';
-import { useAuth } from '@/src/app/auth/provider';
-import * as permissions from '@/src/lib/permissions';
+import { useAuth } from '@/hooks/use-auth';
+import * as permissions from '@/lib/permissions';
 import Link from 'next/link';
 
 // --- Définition du type pour une facture dans la liste ---

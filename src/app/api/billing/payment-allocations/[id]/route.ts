@@ -16,7 +16,8 @@ export async function DELETE(
 ) {
   try {
     const allowedRoles: Role[] = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'ACCOUNTANT'];
-    await authorize(allowedRoles);
+    // ✅ CORRECTION: Added the second argument to the authorize function for logging.
+    await authorize(allowedRoles, 'DELETE /billing/payment-allocations');
 
     const { id: allocationId } = await context.params;
 

@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { InvoiceStatus, PaymentStatus, CreditNoteStatus, Role } from '@prisma/client';
+import { InvoiceStatus, PaymentStatus, CreditNoteStatus } from '@prisma/client';
 import { authorize } from '@/lib/authorize';
 import { backendPermissionsMap } from '@/lib/permissions-map';
 

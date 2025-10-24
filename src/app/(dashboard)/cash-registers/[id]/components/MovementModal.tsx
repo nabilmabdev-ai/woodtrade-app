@@ -3,8 +3,8 @@
 
 import { useState, FormEvent, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { useAuth } from '@/src/app/auth/provider';
-import * as permissions from '@/src/lib/permissions';
+import { useAuth } from '@/hooks/use-auth';
+import * as permissions from '@/lib/permissions';
 import { Role } from '@prisma/client';
 
 type MovementType = 'IN' | 'OUT';
@@ -61,7 +61,7 @@ export default function MovementModal({ isOpen, onClose, onSubmit, isSubmitting,
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" aria-modal="true" role="dialog">
         <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-lg text-center">
           <h2 className="text-2xl font-bold mb-4 text-red-600">Accès non autorisé</h2>
-          <p>Vous n'avez pas la permission d'effectuer cette action.</p>
+          <p>Vous n&apos;avez pas la permission d&apos;effectuer cette action.</p>
           <button
             type="button"
             onClick={onClose}

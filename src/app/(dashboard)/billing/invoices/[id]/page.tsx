@@ -10,8 +10,8 @@ import { InvoiceDocument } from '@/components/pdf/InvoiceDocument';
 import RecordPaymentModal from './RecordPaymentModal';
 import { Trash2 } from 'lucide-react';
 import { CURRENCY_LABEL } from '@/lib/constants';
-import { useAuth } from '@/src/app/auth/provider';
-import * as permissions from '@/src/lib/permissions';
+import { useAuth } from '@/hooks/use-auth';
+import * as permissions from '@/lib/permissions';
 import { Role } from '@prisma/client';
 
 // --- INTERFACES ---

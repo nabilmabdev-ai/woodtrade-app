@@ -1,9 +1,7 @@
+// src/app/api/inventory/adjust/route.ts
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { Role } from '@prisma/client';
 import { backendPermissionsMap } from '@/lib/permissions-map';
 import { authorize } from '@/lib/authorize';
 
@@ -17,7 +15,7 @@ const ALLOWED_ROLES = backendPermissionsMap['/inventory/adjust']['POST'];
  */
 export async function POST(request: Request) {
   try {
-    const user = await authorize(ALLOWED_ROLES, 'POST /inventory/adjust');
+    await authorize(ALLOWED_ROLES, 'POST /inventory/adjust');
 
     // 4. Si l'utilisateur est autorisé, procéder à la logique métier.
     const body = await request.json();

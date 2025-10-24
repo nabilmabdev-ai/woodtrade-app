@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { CashRegisterType, CashRegisterSessionStatus, Prisma, Role } from '@prisma/client';
+import { CashRegisterType, CashRegisterSessionStatus, Prisma } from '@prisma/client';
 import { authorize } from '@/lib/authorize';
 import { backendPermissionsMap } from '@/lib/permissions-map';
 

@@ -3,8 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/src/app/auth/provider';
-import * as permissions from '@/src/lib/permissions';
+import { useAuth } from '@/hooks/use-auth';
+import * as permissions from '@/lib/permissions';
 import { Role } from '@prisma/client';
 
 interface InventoryItem {
@@ -30,33 +30,16 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  if (!userRole) {
-    return <p className="p-8 text-center">Chargement...</p>;
-  }
-
-  // Visible only to authorized roles
-  if (!permissions.canManageWarehouse(userRole)) {
-    return (
-      <main className="p-8 text-center">
-        <h1 className="text-2xl font-bold text-red-600">Accès non autorisé</h1>
-        <p className="mt-2">Vous n'avez pas la permission de voir cette page.</p>
-      </main>
-    );
-  }
-
   useEffect(() => {
     const fetchInventory = async () => {
       try {
         const response = await fetch('/api/inventory');
         if (!response.ok) {
-          // --- ✅ CORRECTION APPLIQUÉE ICI ---
-          // On lance un 'new Error' pour une gestion d'erreur cohérente.
           throw new Error('Erreur réseau lors du chargement des stocks');
         }
         const data = await response.json();
         setInventory(data);
       } catch (err) {
-        // Le bloc catch peut maintenant correctement traiter l'objet Error.
         const error = err as Error;
         setError(error.message);
       } finally {
@@ -67,15 +50,26 @@ export default function InventoryPage() {
     fetchInventory();
   }, []);
 
+  if (!userRole) {
+    return <p className="p-8 text-center">Chargement...</p>;
+  }
+
+  if (!permissions.canManageWarehouse(userRole)) {
+    return (
+      <main className="p-8 text-center">
+        <h1 className="text-2xl font-bold text-red-600">Accès non autorisé</h1>
+        <p className="mt-2">Vous n&apos;avez pas la permission de voir cette page.</p>
+      </main>
+    );
+  }
+
   if (loading) return <p className="p-8 text-center">Chargement de l&apos;inventaire...</p>;
   if (error) return <p className="p-8 text-center text-red-500">Erreur: {error}</p>;
 
   return (
     <main className="p-8">
       <div className="flex justify-between items-center mb-6">
-        {/* --- ✅ CORRECTION APPLIQUÉE ICI (apostrophe) --- */}
         <h1 className="text-3xl font-bold">Gestion de l&apos;Inventaire</h1>
-        {/* Visible only to authorized roles */}
         {userRole && permissions.canManageWarehouse(userRole) && (
           <Link
             href="/inventory/adjust"
@@ -92,7 +86,6 @@ export default function InventoryPage() {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produit (SKU)</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantité en stock</th>
-              {/* --- ✅ CORRECTION APPLIQUÉE ICI (apostrophe) --- */}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emplacement</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">N° de Lot</th>
             </tr>

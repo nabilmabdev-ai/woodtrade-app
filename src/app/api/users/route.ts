@@ -1,9 +1,7 @@
+// src/app/api/users/route.ts
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { Role } from '@prisma/client';
 import { backendPermissionsMap } from '@/lib/permissions-map';
 import { authorize } from '@/lib/authorize';
 
@@ -17,8 +15,6 @@ const ALLOWED_ROLES = backendPermissionsMap['/users']['GET'];
  * avec un rôle `ADMIN` ou `SUPER_ADMIN` peuvent récupérer la liste complète.
  */
 export async function GET() {
-  const supabase = createRouteHandlerClient({ cookies });
-
   try {
     await authorize(ALLOWED_ROLES, 'GET /users');
 

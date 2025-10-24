@@ -1,87 +1,92 @@
-// src/app/api/billing/credit-note-allocations/[id]/route.ts
+// src/app/api/billing/credit-notes/route.ts
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { InvoiceStatus, CreditNoteStatus, Role } from '@prisma/client';
+import { Role, CreditNoteStatus } from '@prisma/client';
 import { authorize } from '@/lib/authorize';
+import { backendPermissionsMap } from '@/lib/permissions-map';
+
+const GET_ALLOWED_ROLES = backendPermissionsMap['/billing/credit-notes']['GET'];
+const POST_ALLOWED_ROLES = backendPermissionsMap['/billing/credit-notes']['POST'];
 
 /**
- * Gère la requête DELETE pour supprimer une allocation d'avoir client.
- * Cela a pour effet de "détacher" un avoir d'une facture, rendant le montant
- * à nouveau disponible et mettant à jour les statuts.
+ * Gère la requête GET pour récupérer tous les avoirs.
  */
-export async function DELETE(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function GET() {
   try {
-    const allowedRoles: Role[] = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'ACCOUNTANT'];
-    await authorize(allowedRoles);
+    await authorize(GET_ALLOWED_ROLES, 'GET /billing/credit-notes');
 
-    const { id: allocationId } = await context.params;
-
-    const result = await prisma.$transaction(async (tx) => {
-      // 1. Trouver l'allocation pour obtenir les IDs et le montant.
-      const allocation = await tx.creditNoteAllocation.findUniqueOrThrow({
-        where: { id: allocationId },
-      });
-      const { invoiceId, creditNoteId, amountAllocated } = allocation;
-
-      // 2. Supprimer l'enregistrement d'allocation.
-      await tx.creditNoteAllocation.delete({
-        where: { id: allocationId },
-      });
-
-      // 3. Récupérer la facture et recalculer son statut.
-      const invoice = await tx.invoice.findUniqueOrThrow({
-        where: { id: invoiceId },
-        include: { paymentAllocations: true, creditNoteAllocations: true },
-      });
-
-      const totalAllocatedToInvoice =
-        invoice.paymentAllocations.reduce((s, a) => s + a.amountAllocated, 0) +
-        invoice.creditNoteAllocations.reduce((s, a) => s + a.amountAllocated, 0);
-
-      let newInvoiceStatus: InvoiceStatus = InvoiceStatus.UNPAID;
-      if (Math.abs(invoice.total - totalAllocatedToInvoice) < 0.01) {
-        newInvoiceStatus = InvoiceStatus.PAID;
-      } else if (totalAllocatedToInvoice > 0) {
-        newInvoiceStatus = InvoiceStatus.PARTIALLY_PAID;
-      }
-      await tx.invoice.update({ where: { id: invoiceId }, data: { status: newInvoiceStatus } });
-
-      // 4. Mettre à jour l'avoir en ré-incrémentant le montant disponible.
-      const creditNote = await tx.creditNote.update({
-        where: { id: creditNoteId },
-        data: {
-          remainingAmount: { increment: amountAllocated },
+    const creditNotes = await prisma.creditNote.findMany({
+      include: {
+        company: {
+          select: { name: true },
         },
-      });
-      
-      // 5. Recalculer le statut de l'avoir.
-      let newCreditNoteStatus: CreditNoteStatus = CreditNoteStatus.FULLY_USED;
-      // Using the updated remainingAmount from the previous step
-      if (creditNote.remainingAmount > 0.01 && creditNote.remainingAmount < creditNote.initialAmount - 0.01) {
-        newCreditNoteStatus = CreditNoteStatus.PARTIALLY_USED;
-      } else if (Math.abs(creditNote.remainingAmount - creditNote.initialAmount) < 0.01) {
-        newCreditNoteStatus = CreditNoteStatus.AVAILABLE;
-      }
-      
-      await tx.creditNote.update({
-        where: { id: creditNoteId },
-        data: { status: newCreditNoteStatus },
-      });
-
-      return { success: true, message: 'Allocation d\'avoir supprimée.' };
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
-    return NextResponse.json(result, { status: 200 });
+    return NextResponse.json(creditNotes);
+
   } catch (error) {
     if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
       return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
     }
-    console.error("Erreur lors de la suppression de l'allocation d'avoir:", error);
-    const errorMessage = error instanceof Error ? error.message : "Impossible de traiter la requête.";
-    return new NextResponse(JSON.stringify({ error: errorMessage }), { status: 500 });
+    console.error('Erreur lors de la récupération des avoirs:', error);
+    const errorMessage = error instanceof Error ? error.message : "Erreur interne.";
+    return new NextResponse(
+      JSON.stringify({ error: 'Impossible de récupérer les avoirs', details: errorMessage }),
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Gère la requête POST pour créer un nouvel avoir.
+ */
+export async function POST(request: Request) {
+  try {
+    await authorize(POST_ALLOWED_ROLES, 'POST /billing/credit-notes');
+
+    const body = await request.json();
+    const { companyId, amount, reason, date } = body as {
+      companyId: string;
+      amount: number;
+      reason: string;
+      date: string; 
+    };
+
+    if (!companyId || !amount || amount <= 0 || !reason || !date) {
+      return new NextResponse(
+        JSON.stringify({ error: 'Données de l\'avoir incomplètes ou invalides.' }),
+        { status: 400 }
+      );
+    }
+
+    const newCreditNote = await prisma.creditNote.create({
+      data: {
+        companyId,
+        // ✅ CORRECTION: Use the correct field names 'initialAmount' and 'remainingAmount'
+        initialAmount: amount,
+        remainingAmount: amount,
+        reason,
+        createdAt: new Date(date), // The field in the DB is `createdAt`
+        status: CreditNoteStatus.AVAILABLE,
+      },
+    });
+
+    return NextResponse.json(newCreditNote, { status: 201 });
+
+  } catch (error) {
+    if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
+      return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
+    }
+    console.error('Erreur lors de la création de l\'avoir:', error);
+    const errorMessage = error instanceof Error ? error.message : "Erreur interne.";
+    return new NextResponse(
+      JSON.stringify({ error: 'Impossible de créer l\'avoir', details: errorMessage }),
+      { status: 500 }
+    );
   }
 }

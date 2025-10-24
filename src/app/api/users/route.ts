@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma';
 import { backendPermissionsMap } from '@/lib/permissions-map';
 import { authorize } from '@/lib/authorize';
 
+export const runtime = "nodejs"; // Force Node.js runtime to ensure cookie access for Supabase SSR client
+
 // Define the roles that are allowed to access this endpoint.
 const ALLOWED_ROLES = backendPermissionsMap['/users']['GET'];
 
@@ -16,9 +18,10 @@ const ALLOWED_ROLES = backendPermissionsMap['/users']['GET'];
  */
 export async function GET() {
   try {
+    // authorize() will now correctly find the session because the runtime is nodejs
     await authorize(ALLOWED_ROLES, 'GET /users');
 
-    // 4. Si l'utilisateur est autorisé, procéder à la récupération des données.
+    // If the user is authorized, proceed to fetch the data.
     const users = await prisma.user.findMany({
       orderBy: {
         createdAt: 'desc',
@@ -29,6 +32,7 @@ export async function GET() {
 
   } catch (error) {
     if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
+      // This block will now only be hit for genuinely unauthenticated or unauthorized users.
       return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
     }
     console.error('Erreur lors de la récupération des utilisateurs:', error);

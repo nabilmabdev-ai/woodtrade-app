@@ -1,0 +1,27 @@
+name: Daily RBAC Violation Summary
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs every day at midnight UTC
+
+jobs:
+  summarize-violations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create log file if it does not exist
+        run: touch logs/rbac_violations.log
+
+      - name: Summarize and Log Violations
+        run: |
+          echo "# Daily RBAC Violation Summary for $(date)"
+          echo ""
+          if [ -s logs/rbac_violations.log ]; then
+            echo "Found $(wc -l < logs/rbac_violations.log) violations:"
+            echo "\`\`\`"
+            cat logs/rbac_violations.log
+            echo "\`\`\`"
+          else
+            echo "No RBAC violations recorded in the last 24 hours."
+          fi

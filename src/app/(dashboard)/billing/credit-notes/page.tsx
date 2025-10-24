@@ -3,8 +3,10 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { CreditNoteStatus } from '@prisma/client';
+import { CreditNoteStatus, Role } from '@prisma/client';
 import { CURRENCY_LABEL } from '@/lib/constants';
+import { useAuth } from '@/hooks/use-auth';
+import * as permissions from '@/lib/permissions';
 
 // --- INTERFACES ---
 interface CreditNote {
@@ -33,6 +35,9 @@ const StatusBadge = ({ status }: { status: CreditNoteStatus }) => {
 };
 
 export default function CreditNotesPage() {
+  const { user } = useAuth();
+  const userRole = user?.role as Role;
+
   const [creditNotes, setCreditNotes] = useState<CreditNote[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,8 +65,23 @@ export default function CreditNotesPage() {
     <main className="p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Avoirs Clients</h1>
-        {/* Un bouton pour la création manuelle pourrait être ajouté ici plus tard */}
+        {/* Visible only to authorized roles */}
+        {userRole && permissions.canManageCreditNotes(userRole) && (
+          <button
+            // onClick={handleOpenModal} // To be implemented
+            className="px-4 py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+            disabled // Remove disabled when modal is ready
+          >
+            + Créer un Avoir
+          </button>
+        )}
       </div>
+
+      {userRole === 'ACCOUNTANT' && (
+        <div className="mb-4 p-3 bg-yellow-100 text-yellow-800 border border-yellow-200 rounded-md">
+          Vue en lecture seule pour les comptables.
+        </div>
+      )}
 
       <div className="border rounded-lg overflow-hidden shadow-sm">
         <table className="min-w-full divide-y divide-gray-200">

@@ -1,14 +1,20 @@
-// src/app/api/billing/payments/route.ts
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { PaymentStatus } from '@prisma/client';
+import { authorize } from '@/lib/authorize';
+import { backendPermissionsMap } from '@/lib/permissions-map';
+
+const GET_ALLOWED_ROLES = backendPermissionsMap['/billing/payments']['GET'];
+const POST_ALLOWED_ROLES = backendPermissionsMap['/billing/payments']['POST'];
 
 /**
  * Gère la requête GET pour récupérer tous les paiements.
  */
 export async function GET() {
   try {
+    await authorize(GET_ALLOWED_ROLES, 'GET /billing/payments');
+
     const payments = await prisma.payment.findMany({
       include: {
         company: { select: { name: true } },
@@ -45,6 +51,8 @@ export async function GET() {
  */
 export async function POST(request: Request) {
   try {
+    await authorize(POST_ALLOWED_ROLES, 'POST /billing/payments');
+
     const body = await request.json();
     const { companyId, amount, paymentDate, method } = body as {
       companyId: string;
@@ -73,6 +81,9 @@ export async function POST(request: Request) {
     return NextResponse.json(newPayment, { status: 201 });
 
   } catch (error) {
+    if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
+      return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
+    }
     console.error('Erreur lors de la création du paiement:', error);
     const errorMessage = error instanceof Error ? error.message : "Erreur interne.";
     return new NextResponse(

@@ -2,12 +2,10 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { Role } from '@prisma/client';
+import { backendPermissionsMap } from '@/lib/permissions-map';
+import { authorize } from '@/lib/authorize';
 
-// Define the roles that are allowed to perform inventory adjustments.
-const ALLOWED_ROLES: Role[] = [Role.WAREHOUSE, Role.ADMIN, Role.SUPER_ADMIN];
+const ALLOWED_ROLES = backendPermissionsMap['/inventory/adjust']['POST'];
 
 /**
  * Gère la requête POST pour ajuster la quantité d'un produit en stock.
@@ -16,29 +14,8 @@ const ALLOWED_ROLES: Role[] = [Role.WAREHOUSE, Role.ADMIN, Role.SUPER_ADMIN];
  * (WAREHOUSE, ADMIN, SUPER_ADMIN) peuvent exécuter cette action.
  */
 export async function POST(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
-
   try {
-    // 1. Vérifier la session de l'utilisateur.
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      return new NextResponse(JSON.stringify({ error: 'Non autorisé.' }), { status: 401 });
-    }
-
-    // 2. Récupérer le profil de l'utilisateur pour vérifier son rôle.
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { role: true },
-    });
-
-    if (!user) {
-      return new NextResponse(JSON.stringify({ error: 'Utilisateur non trouvé.' }), { status: 403 });
-    }
-
-    // 3. Appliquer la règle d'accès.
-    if (!ALLOWED_ROLES.includes(user.role)) {
-      return new NextResponse(JSON.stringify({ error: 'Accès refusé. Permissions insuffisantes.' }), { status: 403 });
-    }
+    await authorize(ALLOWED_ROLES, 'POST /inventory/adjust');
 
     // 4. Si l'utilisateur est autorisé, procéder à la logique métier.
     const body = await request.json();
@@ -86,7 +63,7 @@ export async function POST(request: Request) {
           quantity: quantityFloat,
           type: quantityFloat > 0 ? 'IN' : 'ADJUSTMENT',
           reason: reason,
-          // userId: session.user.id, // <-- Ligne qui causait l'erreur, maintenant commentée
+          // userId: user.id,
         },
       });
 
@@ -96,6 +73,9 @@ export async function POST(request: Request) {
     return NextResponse.json(result, { status: 200 });
 
   } catch (error) {
+    if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
+      return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
+    }
     console.error("Erreur lors de l'ajustement de l'inventaire:", error);
     const errorMessage = error instanceof Error ? error.message : "Impossible de traiter l'ajustement";
     return new NextResponse(JSON.stringify({ error: errorMessage }), { status: 500 });

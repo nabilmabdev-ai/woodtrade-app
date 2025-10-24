@@ -1,8 +1,11 @@
-// src/app/api/billing/reconciliation/route.ts
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { InvoiceStatus, PaymentStatus, CreditNoteStatus } from '@prisma/client';
+import { authorize } from '@/lib/authorize';
+import { backendPermissionsMap } from '@/lib/permissions-map';
+
+const ALLOWED_ROLES = backendPermissionsMap['/billing/reconciliation']['POST'];
 
 interface ReconciliationPayload {
   sourceId: string;
@@ -16,6 +19,8 @@ interface ReconciliationPayload {
  */
 export async function POST(request: Request) {
   try {
+    await authorize(ALLOWED_ROLES, 'POST /billing/reconciliation');
+
     const body = await request.json() as ReconciliationPayload;
     const { sourceId, sourceType, invoiceIds } = body;
 
@@ -116,6 +121,9 @@ export async function POST(request: Request) {
     return NextResponse.json(result, { status: 200 });
 
   } catch (error) {
+    if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
+      return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
+    }
     console.error("Erreur lors du rapprochement client:", error);
     const errorMessage = error instanceof Error ? error.message : "Impossible de traiter la requête.";
     return new NextResponse(JSON.stringify({ error: errorMessage }), { status: 500 });

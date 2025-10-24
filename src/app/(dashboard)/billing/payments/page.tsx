@@ -3,9 +3,11 @@
 
 import { useState, useEffect, useCallback, FormEvent } from 'react';
 import toast from 'react-hot-toast';
-import { PaymentStatus } from '@prisma/client';
+import { PaymentStatus, Role } from '@prisma/client';
 import SearchableDropdown, { DropdownItem } from '@/components/SearchableDropdown';
 import { CURRENCY_LABEL } from '@/lib/constants';
+import { useAuth } from '@/hooks/use-auth';
+import * as permissions from '@/lib/permissions';
 
 // --- INTERFACES ---
 interface Payment {
@@ -33,6 +35,9 @@ const StatusBadge = ({ status }: { status: PaymentStatus }) => {
 };
 
 export default function PaymentsPage() {
+  const { user } = useAuth();
+  const userRole = user?.role as Role;
+
   const [payments, setPayments] = useState<Payment[]>([]);
   const [customers, setCustomers] = useState<DropdownItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,12 +134,15 @@ export default function PaymentsPage() {
       <main className="p-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Paiements Clients</h1>
-          <button
-            onClick={handleOpenModal}
-            className="px-4 py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700"
-          >
-            + Enregistrer un Paiement
-          </button>
+          {/* Visible only to authorized roles */}
+          {userRole && permissions.canManagePayments(userRole) && (
+            <button
+              onClick={handleOpenModal}
+              className="px-4 py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700"
+            >
+              + Enregistrer un Paiement
+            </button>
+          )}
         </div>
 
         <div className="border rounded-lg overflow-hidden shadow-sm">

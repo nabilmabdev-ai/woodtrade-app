@@ -3,6 +3,9 @@
 
 import { useState, FormEvent, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/hooks/use-auth';
+import * as permissions from '@/lib/permissions';
+import { Role } from '@prisma/client';
 
 type MovementType = 'IN' | 'OUT';
 
@@ -22,6 +25,9 @@ interface MovementModalProps {
 }
 
 export default function MovementModal({ isOpen, onClose, onSubmit, isSubmitting, isSessionActive }: MovementModalProps) {
+  const { user } = useAuth();
+  const userRole = user?.role as Role;
+
   const [type, setType] = useState<MovementType>('OUT');
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
@@ -48,6 +54,25 @@ export default function MovementModal({ isOpen, onClose, onSubmit, isSubmitting,
   };
 
   if (!isOpen) return null;
+
+  // Visible only to authorized roles
+  if (!userRole || !permissions.canCreateCashRegisterMovement(userRole)) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" aria-modal="true" role="dialog">
+        <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-lg text-center">
+          <h2 className="text-2xl font-bold mb-4 text-red-600">Accès non autorisé</h2>
+          <p>Vous n&apos;avez pas la permission d&apos;effectuer cette action.</p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-6 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+          >
+            Fermer
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" aria-modal="true" role="dialog">

@@ -2,12 +2,11 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { Role } from '@prisma/client';
+import { backendPermissionsMap } from '@/lib/permissions-map';
+import { authorize } from '@/lib/authorize';
 
 // Define the roles that are allowed to access this endpoint.
-const ALLOWED_ROLES: Role[] = [Role.ADMIN, Role.SUPER_ADMIN];
+const ALLOWED_ROLES = backendPermissionsMap['/users']['GET'];
 
 /**
  * Gère la requête GET pour récupérer tous les utilisateurs.
@@ -16,39 +15,8 @@ const ALLOWED_ROLES: Role[] = [Role.ADMIN, Role.SUPER_ADMIN];
  * avec un rôle `ADMIN` ou `SUPER_ADMIN` peuvent récupérer la liste complète.
  */
 export async function GET() {
-  const supabase = createRouteHandlerClient({ cookies });
-
   try {
-    // 1. Vérifier la session de l'utilisateur qui fait la requête.
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Non autorisé : aucune session trouvée.' }),
-        { status: 401 }
-      );
-    }
-
-    // 2. Récupérer le profil de l'utilisateur depuis notre base de données pour vérifier son rôle.
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { role: true },
-    });
-
-    if (!user) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Non autorisé : utilisateur non trouvé dans la base de données.' }),
-        { status: 403 }
-      );
-    }
-
-    // 3. Appliquer la règle d'accès basée sur le rôle.
-    if (!ALLOWED_ROLES.includes(user.role)) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Accès refusé : permissions insuffisantes.' }),
-        { status: 403 }
-      );
-    }
+    await authorize(ALLOWED_ROLES, 'GET /users');
 
     // 4. Si l'utilisateur est autorisé, procéder à la récupération des données.
     const users = await prisma.user.findMany({
@@ -60,6 +28,9 @@ export async function GET() {
     return NextResponse.json(users);
 
   } catch (error) {
+    if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
+      return new NextResponse(error.message, { status: error.message === 'UNAUTHORIZED' ? 401 : 403 });
+    }
     console.error('Erreur lors de la récupération des utilisateurs:', error);
     return new NextResponse(
       JSON.stringify({ error: "Une erreur interne est survenue lors de la récupération des utilisateurs." }),

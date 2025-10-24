@@ -10,6 +10,9 @@ import { InvoiceDocument } from '@/components/pdf/InvoiceDocument';
 import RecordPaymentModal from './RecordPaymentModal';
 import { Trash2 } from 'lucide-react';
 import { CURRENCY_LABEL } from '@/lib/constants';
+import { useAuth } from '@/hooks/use-auth';
+import * as permissions from '@/lib/permissions';
+import { Role } from '@prisma/client';
 
 // --- INTERFACES ---
 interface Allocation {
@@ -43,6 +46,9 @@ interface InvoiceDetails {
 export default function InvoiceDetailPage() {
   const params = useParams();
   const id = params.id as string;
+
+  const { user } = useAuth();
+  const userRole = user?.role as Role;
 
   const [invoice, setInvoice] = useState<InvoiceDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -107,7 +113,8 @@ export default function InvoiceDetailPage() {
           <div className="flex justify-between items-center mb-4">
             <Link href="/billing/invoices" className="text-blue-600 hover:underline">&larr; Retour</Link>
             <div className="flex items-center space-x-4">
-              {remainingDue > 0.01 && (
+              {/* Visible only to authorized roles */}
+              {userRole && permissions.canManagePayments(userRole) && remainingDue > 0.01 && (
                 <button onClick={() => setIsModalOpen(true)} className="px-4 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">
                   Enregistrer un Paiement
                 </button>
@@ -196,7 +203,10 @@ export default function InvoiceDetailPage() {
                           <td className="px-4 py-2">Paiement ({alloc.payment.method})</td>
                           <td className="px-4 py-2 text-right font-medium">{alloc.amountAllocated.toFixed(2)} {CURRENCY_LABEL}</td>
                           <td className="px-4 py-2 text-right">
-                            <button onClick={() => handleDetachAllocation(alloc.id, 'payment')} disabled={isProcessing} title="Détacher" className="text-red-500 hover:text-red-700 disabled:text-gray-400"><Trash2 className="h-4 w-4" /></button>
+                            {/* Visible only to authorized roles */}
+                            {userRole && permissions.canManagePayments(userRole) && (
+                              <button onClick={() => handleDetachAllocation(alloc.id, 'payment')} disabled={isProcessing} title="Détacher" className="text-red-500 hover:text-red-700 disabled:text-gray-400"><Trash2 className="h-4 w-4" /></button>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -206,7 +216,10 @@ export default function InvoiceDetailPage() {
                             <td className="px-4 py-2">Avoir ({alloc.creditNote.reason})</td>
                             <td className="px-4 py-2 text-right font-medium">{alloc.amountAllocated.toFixed(2)} {CURRENCY_LABEL}</td>
                             <td className="px-4 py-2 text-right">
+                              {/* Visible only to authorized roles */}
+                              {userRole && permissions.canManagePayments(userRole) && (
                                 <button onClick={() => handleDetachAllocation(alloc.id, 'credit_note')} disabled={isProcessing} title="Détacher" className="text-red-500 hover:text-red-700 disabled:text-gray-400"><Trash2 className="h-4 w-4" /></button>
+                              )}
                             </td>
                         </tr>
                       ))}

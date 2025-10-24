@@ -293,21 +293,18 @@ model Refund {
 
 // --- CASH REGISTER (POS) ---
 
-// ✅ NOUVEAU: Enum pour distinguer les types de caisses.
 enum CashRegisterType {
-  SALES   // Pour les ventes POS, gérées par sessions
-  EXPENSE // Pour les dépenses, gestion continue
+  SALES   
+  EXPENSE 
 }
 
 model CashRegister {
   id        String      @id @default(cuid())
   name      String      @unique
   location  String?
-  // ✅ MODIFIÉ: Ajout du champ type avec une valeur par défaut.
   type      CashRegisterType @default(SALES)
   // relations
   sessions  CashRegisterSession[]
-  // ✅ NOUVEAU: Relation pour les mouvements directs (caisses de dépenses).
   cashMovements CashMovement[]
 }
 
@@ -344,9 +341,6 @@ model CashMovement {
   reason    String
   createdAt DateTime          @default(now())
   // relations
-  
-  // ✅ MODIFIÉ: Un mouvement peut être lié à une session (ventes) OU directement à une caisse (dépenses).
-  // La logique applicative doit s'assurer qu'au moins l'un des deux est présent.
   session         CashRegisterSession? @relation(fields: [sessionId], references: [id])
   sessionId       String?
   
@@ -363,6 +357,7 @@ enum CashMovementType {
   WITHDRAWAL
   TRANSFER_IN
   TRANSFER_OUT
+  ADJUSTMENT // ✅ CORRECTION: Added the missing enum value
 }
 
 // --- SUPPLIER BILLING ---

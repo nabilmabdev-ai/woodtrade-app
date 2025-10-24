@@ -5,29 +5,14 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard,
-  Box,
-  ShoppingCart,
-  Warehouse,
-  FileText,
-  UserCog,
-  Wallet,
-  Undo2,
-  LineChart,
-  Truck,
-  Building,
-  ArrowRightLeft,
-  ChevronsLeft,
-  ChevronsRight,
-  ChevronDown,
-  ChevronUp,
-  Store,
-  GanttChartSquare,
-  ClipboardCheck,
-  ClipboardList,
-  // ✅ NOUVEAU : Ajout de l'icône pour les clients
-  Users,
+  LayoutDashboard, Box, ShoppingCart, Warehouse, FileText, UserCog,
+  Wallet, Undo2, LineChart, Truck, Building, ArrowRightLeft,
+  ChevronsLeft, ChevronsRight, ChevronDown, ChevronUp, Store,
+  GanttChartSquare, ClipboardCheck, ClipboardList, Users,
 } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import * as permissions from '@/lib/permissions';
+import { Role } from '@prisma/client';
 
 interface NavLink {
   href: string;
@@ -41,15 +26,15 @@ interface NavSection {
   href?: string;
   label: string;
   subLinks?: NavLink[];
+  isVisible: (role: Role) => boolean;
 }
 
-const navSections: NavSection[] = [
+const navSections: Omit<NavSection, 'isVisible'>[] = [
   { href: '/', label: 'Tableau de bord', icon: LayoutDashboard },
   { href: '/pos', label: 'Point de Vente (POS)', icon: Store },
   {
     label: 'Ventes', icon: ShoppingCart,
     subLinks: [
-      // ✅ NOUVEAU : Ajout du lien vers la page des clients
       { href: '/customers', label: 'Clients', icon: Users },
       { href: '/sales/orders', label: 'Commandes', icon: ShoppingCart },
       { href: '/billing/invoices', label: 'Factures', icon: FileText },
@@ -98,9 +83,11 @@ const navSections: NavSection[] = [
   },
 ];
 
-
 export default function Sidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const userRole = user?.role as Role;
+
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ 'Ventes': true, 'Achats': true });
 
@@ -108,7 +95,30 @@ export default function Sidebar() {
     setOpenSections(prev => ({ ...prev, [label]: !prev[label] }));
   };
 
-  // Le reste du composant (le JSX) reste inchangé
+  if (!userRole) {
+    return null; // Don't render sidebar if user or role is not available
+  }
+
+  // Visible only to authorized roles
+  const filteredNavSections = navSections.map(section => {
+    let isVisible = true;
+    if (section.label === 'Administration') isVisible = permissions.canViewUsers(userRole);
+    if (section.label === 'Ventes') isVisible = permissions.canViewBilling(userRole);
+    if (section.label === 'Achats') isVisible = permissions.canViewWarehouse(userRole);
+    if (section.label === 'Gestion de Caisse') isVisible = permissions.canViewCashRegisters(userRole);
+    if (section.label === 'Produits & Inventaire') isVisible = permissions.canViewWarehouse(userRole);
+
+    const subLinks = section.subLinks?.filter(subLink => {
+      if (subLink.href.startsWith('/billing') || subLink.href.startsWith('/returns')) return permissions.canViewBilling(userRole);
+      if (subLink.href.startsWith('/inventory')) return permissions.canViewWarehouse(userRole);
+      if (subLink.href.startsWith('/users')) return permissions.canViewUsers(userRole);
+      if (subLink.href.startsWith('/cash-registers')) return permissions.canViewCashRegisters(userRole);
+      return true; // Default to visible if no specific rule
+    });
+
+    return { ...section, isVisible, subLinks };
+  }).filter(section => section.isVisible && (section.href || (section.subLinks && section.subLinks.length > 0)));
+
   return (
     <aside className={`flex-shrink-0 bg-gray-800 text-white flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
       <div className={`h-16 flex items-center border-b border-gray-700 ${isCollapsed ? 'justify-center' : 'justify-center'}`}>
@@ -117,7 +127,7 @@ export default function Sidebar() {
       </div>
       
       <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-        {navSections.map((section) => (
+        {filteredNavSections.map((section) => (
           <div key={section.label}>
             {section.subLinks ? (
               <>

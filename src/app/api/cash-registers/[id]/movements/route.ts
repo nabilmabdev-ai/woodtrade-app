@@ -1,3 +1,4 @@
+// src/app/api/cash-registers/[id]/movements/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
@@ -89,7 +90,6 @@ export async function GET(
 
 /**
  * Gère la requête POST pour créer un nouveau mouvement de caisse.
- * ✅ SÉCURITÉ APPLIQUÉE : Seuls les managers ou admins peuvent ajouter/retirer des fonds.
  */
 export async function POST(
   request: NextRequest,
@@ -102,7 +102,7 @@ export async function POST(
     const body = await request.json();
     const { amount, type, reason, sessionId } = body as {
       amount: number;
-      type: CashMovementType;
+      type: 'IN' | 'OUT'; // Type received from the frontend is a simple string
       reason: string;
       sessionId?: string;
     };
@@ -111,9 +111,16 @@ export async function POST(
       return new NextResponse(JSON.stringify({ error: "Données manquantes" }), { status: 400 });
     }
     
-    const cashRegister = await prisma.cashRegister.findUnique({ where: { id: cashRegisterId } });
-    if (!cashRegister) {
-      return new NextResponse(JSON.stringify({ error: "Caisse introuvable." }), { status: 404 });
+    // This block translates the simple string from the frontend ('IN'/'OUT')
+    // into the corresponding Prisma enum value that the database expects.
+    let movementType: CashMovementType;
+    if (type === 'IN') {
+      movementType = CashMovementType.PAY_IN;
+    } else if (type === 'OUT') {
+      movementType = CashMovementType.PAY_OUT;
+    } else {
+      // If an unexpected value is received, reject the request.
+      return new NextResponse(JSON.stringify({ error: `Type de mouvement invalide reçu : '${type}'` }), { status: 400 });
     }
 
     const amountFloat = parseFloat(amount as unknown as string);
@@ -121,21 +128,16 @@ export async function POST(
       return new NextResponse(JSON.stringify({ error: "Montant invalide." }), { status: 400 });
     }
     
-    const finalAmount = (type === CashMovementType.PAY_OUT || type === CashMovementType.WITHDRAWAL || type === CashMovementType.TRANSFER_OUT) ? -amountFloat : amountFloat;
+    // Use the translated `movementType` (the enum) to determine the sign of the amount.
+    const finalAmount = (movementType === CashMovementType.PAY_OUT) ? -amountFloat : amountFloat;
 
     const newMovement = await prisma.cashMovement.create({
       data: {
-        // If a sessionId is provided (i.e., for a SALES register with the box checked), use it.
         sessionId: sessionId,
-        
-        // If NO sessionId is provided, then the movement MUST be linked directly to the cash register.
-        // This covers both EXPENSE registers (which never have a session) AND
-        // SALES registers where the movement is intentionally not part of the session.
         cashRegisterId: !sessionId ? cashRegisterId : undefined,
-
         userId: user.id,
         amount: finalAmount,
-        type,
+        type: movementType, // Pass the correct enum value to Prisma.
         reason,
       },
     });

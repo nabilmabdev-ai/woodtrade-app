@@ -101,7 +101,7 @@ describe('POST /api/cash-registers/[id]/movements', () => {
         reason: 'Test movement',
         userId: mockUser.id,
         sessionId: sessionId,
-        cashRegisterId: undefined,
+        cashRegisterId: cashRegisterId,
       },
     });
   });

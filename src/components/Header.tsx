@@ -6,9 +6,14 @@ import { useRouter } from 'next/navigation';
 import { getSupabase } from '@/lib/supabase-browser';
 import { useAuth } from '@/hooks/use-auth';
 import { Menu, Transition } from '@headlessui/react';
-import { Search, Bell, UserCircle, LogOut } from 'lucide-react';
+import { Search, Bell, UserCircle, LogOut, Menu as MenuIcon } from 'lucide-react'; // <-- NEW: Import MenuIcon
 
-export default function Header() {
+// NEW: Add onMenuClick prop
+interface HeaderProps {
+  onMenuClick: () => void;
+}
+
+export default function Header({ onMenuClick }: HeaderProps) {
   const router = useRouter();
   const { user } = useAuth();
   
@@ -24,9 +29,18 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white shadow-sm p-4 border-b flex justify-between items-center sticky top-0 z-10">
-      {/* Barre de recherche globale (inchangée) */}
-      <div className="relative flex-1 max-w-xs">
+    <header className="bg-white shadow-sm p-4 border-b flex justify-between items-center sticky top-0 z-30">
+      {/* NEW: Hamburger button for mobile, hidden on larger screens */}
+      <button
+        onClick={onMenuClick}
+        className="lg:hidden p-2 rounded-md text-gray-500 hover:bg-gray-100"
+        aria-label="Open sidebar"
+      >
+        <MenuIcon className="h-6 w-6" />
+      </button>
+
+      {/* MODIFIED: Add margin on mobile to not overlap the menu button */}
+      <div className="relative flex-1 max-w-xs ml-4 lg:ml-0">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search className="h-5 w-5 text-gray-400" />
         </div>
@@ -37,7 +51,7 @@ export default function Header() {
         />
       </div>
 
-      {/* Actions de droite */}
+      {/* Actions de droite (unchanged) */}
       <div className="flex items-center space-x-4">
         
         <button className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700">

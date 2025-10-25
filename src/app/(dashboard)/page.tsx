@@ -1,6 +1,7 @@
 // src/app/(dashboard)/page.tsx
 "use client";
 
+// ... (imports remain the same)
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { CircleDollarSign, ShoppingCart, TrendingUp, TriangleAlert, AlertCircle, CalendarClock } from 'lucide-react';
@@ -59,7 +60,6 @@ const WelcomeBanner = ({ userName }: { userName: string }) => (
     </div>
 );
 
-
 export default function DashboardPage() {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -93,7 +93,7 @@ export default function DashboardPage() {
     };
     fetchAllStats();
   }, []);
-
+  
   if (loading) return <div className="p-8 text-center text-gray-500">Chargement du tableau de bord...</div>;
   if (error) return <div className="p-8 text-center text-red-500">Erreur: {error}</div>;
   if (!stats || !purchasingStats) return <div className="p-8 text-center text-gray-500">Aucune donnée à afficher.</div>;
@@ -101,13 +101,14 @@ export default function DashboardPage() {
   const userName = user?.user_metadata?.full_name || user?.email || 'Utilisateur';
 
   return (
-    <div className="p-8 bg-gray-50 min-h-full">
+    <div className="p-4 md:p-8 bg-gray-50 min-h-full">
       
       <WelcomeBanner userName={userName} />
 
+      {/* MODIFIED: This grid will now be 1 column on small screens, 2 on medium, and 4 on large screens */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard 
-          title="Chiffre d&apos;affaires (7j)" // ✅ FIX APPLIED HERE
+          title="Chiffre d'affaires (7j)"
           value={`${stats.salesLast7Days.revenue.toFixed(2)} ${CURRENCY_LABEL}`}
           icon={CircleDollarSign}
         />
@@ -130,13 +131,14 @@ export default function DashboardPage() {
         />
       </div>
 
+      {/* MODIFIED: This grid will now be 1 column on small screens and 2 on large screens */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4 flex items-center text-gray-800">
             <TrendingUp className="w-6 h-6 mr-3 text-green-500" />
             Top 5 des produits vendus
           </h2>
-          {/* ✅ FIX APPLIED HERE: Fallback to empty array `[]` if topSellingProducts is null/undefined */}
+          {/* ... (rest of the component is the same) */}
           {(stats.topSellingProducts || []).length > 0 ? (
             <ul className="space-y-3">
               {(stats.topSellingProducts || []).map((product, index) => (
@@ -156,7 +158,7 @@ export default function DashboardPage() {
             <TriangleAlert className="w-6 h-6 mr-3 text-red-500" />
             Alertes de stock bas
           </h2>
-          {/* ✅ FIX APPLIED HERE: Fallback to empty array `[]` if lowStockProducts is null/undefined */}
+          {/* ... (rest of the component is the same) */}
           {(stats.lowStockProducts || []).length > 0 ? (
             <ul className="space-y-3">
               {(stats.lowStockProducts || []).map((item, index) => (
@@ -170,7 +172,6 @@ export default function DashboardPage() {
             <p className="text-center text-gray-500 py-4">Aucun produit en stock bas.</p>
           )}
         </div>
-
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 // src/app/(dashboard)/layout.tsx
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -13,11 +13,12 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, loading } = useAuth();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       if (user?.role === Role.CASHIER) {
-        // Register the service worker for cashiers
+        // ✅ CORRECTION APPLIED HERE
         navigator.serviceWorker.register('/sw.js')
           .then(registration => console.log('Service Worker registered with scope:', registration.scope))
           .catch(error => console.error('Service Worker registration failed:', error));
@@ -43,9 +44,10 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-gray-50 text-gray-800">
-      <Sidebar />
+      <Sidebar isMobileOpen={isSidebarOpen} setMobileOpen={setIsSidebarOpen} />
+      
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
+        <Header onMenuClick={() => setIsSidebarOpen(true)} />
         <main className="flex-1 flex-grow overflow-y-auto">{children}</main>
       </div>
     </div>

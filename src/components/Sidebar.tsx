@@ -1,14 +1,15 @@
 // src/components/Sidebar.tsx
 "use client";
 
-import { useState } from 'react';
+import { useState, Fragment } from 'react'; // <-- NEW: Import Fragment
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Transition } from '@headlessui/react'; // <-- NEW: Import Transition
 import {
   LayoutDashboard, Box, ShoppingCart, Warehouse, FileText, UserCog,
   Wallet, Undo2, LineChart, Truck, Building, ArrowRightLeft,
   ChevronsLeft, ChevronsRight, ChevronDown, ChevronUp, Store,
-  GanttChartSquare, ClipboardCheck, ClipboardList, Users,
+  GanttChartSquare, ClipboardCheck, ClipboardList, Users, X, // <-- NEW: Import X icon
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import * as permissions from '@/lib/permissions';
@@ -83,7 +84,15 @@ const navSections: Omit<NavSection, 'isVisible'>[] = [
   },
 ];
 
-export default function Sidebar() {
+// ... (Interfaces remain the same)
+
+// NEW: Add props for mobile state
+interface SidebarProps {
+  isMobileOpen: boolean;
+  setMobileOpen: (isOpen: boolean) => void;
+}
+
+export default function Sidebar({ isMobileOpen, setMobileOpen }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
   const userRole = user?.role as Role;
@@ -96,9 +105,9 @@ export default function Sidebar() {
   };
 
   if (!userRole) {
-    return null; // Don't render sidebar if user or role is not available
+    return null;
   }
-
+  
   // Visible only to authorized roles
   const filteredNavSections = navSections.map(section => {
     let isVisible = true;
@@ -119,11 +128,17 @@ export default function Sidebar() {
     return { ...section, isVisible, subLinks };
   }).filter(section => section.isVisible && (section.href || (section.subLinks && section.subLinks.length > 0)));
 
-  return (
-    <aside className={`flex-shrink-0 bg-gray-800 text-white flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
-      <div className={`h-16 flex items-center border-b border-gray-700 ${isCollapsed ? 'justify-center' : 'justify-center'}`}>
-        <Truck className={`w-8 h-8 text-blue-400 transition-transform duration-300 ${isCollapsed ? 'transform scale-110' : 'mr-2'}`} />
-        {!isCollapsed && ( <span className="text-2xl font-bold">WoodTrade</span> )}
+  const SidebarContent = () => (
+    <div className={`bg-gray-800 text-white flex flex-col h-full transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
+      <div className={`h-16 flex items-center border-b border-gray-700 ${isCollapsed ? 'justify-center' : 'justify-between px-4'}`}>
+        <div className="flex items-center justify-center">
+          <Truck className={`w-8 h-8 text-blue-400 transition-transform duration-300 ${isCollapsed ? 'transform scale-110' : 'mr-2'}`} />
+          {!isCollapsed && ( <span className="text-2xl font-bold">WoodTrade</span> )}
+        </div>
+        {/* NEW: Close button for mobile overlay */}
+        <button onClick={() => setMobileOpen(false)} className="lg:hidden p-2 -mr-2">
+            <X className="h-6 w-6"/>
+        </button>
       </div>
       
       <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
@@ -158,7 +173,7 @@ export default function Sidebar() {
               </>
             ) : (
               <Link 
-                href={section.href!} 
+                href={section.href!}
                 className={`group relative flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors ${pathname === section.href ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'} ${isCollapsed ? 'justify-center' : ''}`}
               >
                 <section.icon className="h-5 w-5" />
@@ -171,10 +186,51 @@ export default function Sidebar() {
       </nav>
       
       <div className="p-2 border-t border-gray-700">
-        <button onClick={() => setIsCollapsed(!isCollapsed)} className="w-full flex items-center justify-center p-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white">
-          {isCollapsed ? <ChevronsRight className="h-6 w-6" /> : <ChevronsLeft className="h-6 w-6" />}
+        <button onClick={() => setIsCollapsed(!isCollapsed)} className={`w-full flex items-center p-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white ${isCollapsed ? 'justify-center' : 'justify-start'}`}>
+          {isCollapsed ? <ChevronsRight className="h-6 w-6" /> : <ChevronsLeft className="h-6 w-6 mr-2" />}
+          {!isCollapsed && <span>Collapse</span>}
         </button>
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* --- DESKTOP SIDEBAR (hidden on mobile) --- */}
+      <aside className="hidden lg:flex flex-shrink-0">
+        <SidebarContent />
+      </aside>
+
+      {/* --- MOBILE SIDEBAR (overlay) --- */}
+      <Transition show={isMobileOpen} as={Fragment}>
+        <div className="fixed inset-0 flex z-40 lg:hidden" role="dialog" aria-modal="true">
+          <Transition.Child
+            as={Fragment}
+            enter="transition-opacity ease-linear duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="transition-opacity ease-linear duration-300"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-60" onClick={() => setMobileOpen(false)} />
+          </Transition.Child>
+
+          <Transition.Child
+            as={Fragment}
+            enter="transition ease-in-out duration-300 transform"
+            enterFrom="-translate-x-full"
+            enterTo="translate-x-0"
+            leave="transition ease-in-out duration-300 transform"
+            leaveFrom="translate-x-0"
+            leaveTo="-translate-x-full"
+          >
+            <div className="relative flex-1 flex flex-col max-w-xs w-full">
+              <SidebarContent />
+            </div>
+          </Transition.Child>
+        </div>
+      </Transition>
+    </>
   );
 }

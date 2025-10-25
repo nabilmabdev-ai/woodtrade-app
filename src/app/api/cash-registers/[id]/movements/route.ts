@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Prisma, CashMovementType, CashRegisterType } from '@prisma/client';
+import { Prisma, CashMovementType } from '@prisma/client';
 import { authorize } from '@/lib/authorize';
 import { backendPermissionsMap } from '@/lib/permissions-map';
 

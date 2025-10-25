@@ -102,7 +102,7 @@ export default function CloseSessionModal({ isOpen, onClose, onSubmit, isSubmitt
                         </div>
                         <div className="ml-3 text-sm">
                             <label htmlFor="createAdjustment" className="font-medium text-gray-700">
-                                Créer automatiquement un mouvement d'ajustement
+                                Créer automatiquement un mouvement d&apos;ajustement
                             </label>
                             <p className="text-gray-500">Cela équilibrera la caisse pour la prochaine session.</p>
                         </div>

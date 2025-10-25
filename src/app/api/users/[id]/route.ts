@@ -24,11 +24,11 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
           },
           async set(name: string, value: string, options: CookieOptions) {
             const cookieStore = await cookies();
-            try { cookieStore.set({ name, value, ...options }) } catch (error) {}
+            try { cookieStore.set({ name, value, ...options }) } catch {}
           },
           async remove(name: string, options: CookieOptions) {
             const cookieStore = await cookies();
-            try { cookieStore.set({ name, value: '', ...options }) } catch (error) {}
+            try { cookieStore.set({ name, value: '', ...options }) } catch {}
           },
         },
       }

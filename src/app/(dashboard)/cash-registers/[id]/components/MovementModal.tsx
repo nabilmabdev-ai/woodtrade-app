@@ -1,4 +1,3 @@
-// src/app/(dashboard)/cash-registers/[id]/components/MovementModal.tsx
 "use client";
 
 import { useState, FormEvent, useEffect } from 'react';
@@ -47,7 +46,7 @@ export default function MovementModal({ isOpen, onClose, onSubmit, isSubmitting,
     e.preventDefault();
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0 || !reason) {
-      toast.error("Please enter a valid amount and reason.");
+      toast.error("Veuillez entrer un montant et une raison valides.");
       return;
     }
     onSubmit({ type, amount: parsedAmount, reason, applyToSession });
@@ -87,21 +86,20 @@ export default function MovementModal({ isOpen, onClose, onSubmit, isSubmitting,
                 onClick={() => setType('IN')}
                 className={`px-3 py-2 text-sm font-semibold rounded ${type === 'IN' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:bg-white/50'}`}
               >
-                Entrée d'Argent
+                Entrée d&apos;Argent
               </button>
               <button
                 type="button"
                 onClick={() => setType('OUT')}
                 className={`px-3 py-2 text-sm font-semibold rounded ${type === 'OUT' ? 'bg-white shadow text-red-600' : 'text-gray-600 hover:bg-white/50'}`}
               >
-                Sortie d'Argent
+                Sortie d&apos;Argent
               </button>
             </div>
           </div>
 
           <div>
             <label htmlFor="amount" className="block text-sm font-medium text-gray-700">Montant (MAD) *</label>
-            {/* ✅ NEW classes applied for a modern input style */}
             <input
               id="amount"
               type="number"
@@ -117,7 +115,6 @@ export default function MovementModal({ isOpen, onClose, onSubmit, isSubmitting,
 
           <div>
             <label htmlFor="reason" className="block text-sm font-medium text-gray-700">Raison *</label>
-            {/* ✅ NEW classes applied for a modern input style */}
             <input
               id="reason"
               type="text"

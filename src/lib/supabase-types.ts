@@ -1,4 +1,4 @@
-// lib/supabase-types.ts
+// src/lib/supabase-types.ts
 export type Json =
   | string
   | number
@@ -9,14 +9,8 @@ export type Json =
 
 export type Database = {
   public: {
-    Tables: {
-      // Your tables will go here, but an empty placeholder is fine for now.
-    }
-    Enums: {
-      // Your enums will go here.
-    }
-    Functions: {
-      // Your functions will go here.
-    }
+    Tables: Record<string, never> // Changed from {}
+    Enums: Record<string, never>  // Changed from {}
+    Functions: Record<string, never> // Changed from {}
   }
 }

@@ -5,9 +5,7 @@ import { NextResponse } from 'next/server'
 
 export const runtime = "nodejs";
 
-export async function GET(request: Request) {
-  const cookieStore = cookies();
-
+export async function GET() {
   console.log('--- DIAGNOSTIC CHECK (v2) ---');
   console.log('SERVER SAW URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
   console.log('SERVER SAW ANON KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
@@ -20,20 +18,23 @@ export async function GET(request: Request) {
       {
         // This is the complete, correct cookie handler object.
         cookies: {
-          get(name: string) {
+          async get(name: string) {
+            const cookieStore = await cookies();
             return cookieStore.get(name)?.value
           },
-          set(name: string, value: string, options: CookieOptions) {
+          async set(name: string, value: string, options: CookieOptions) {
             try {
+              const cookieStore = await cookies();
               cookieStore.set({ name, value, ...options })
-            } catch (error) {
+            } catch {
               // Errors are ignored in read-only environments.
             }
           },
-          remove(name: string, options: CookieOptions) {
+          async remove(name: string, options: CookieOptions) {
             try {
+              const cookieStore = await cookies();
               cookieStore.set({ name, value: '', ...options })
-            } catch (error) {
+            } catch {
               // Errors are ignored in read-only environments.
             }
           },
@@ -41,11 +42,7 @@ export async function GET(request: Request) {
       }
     )
 
-    const { data: { session }, error } = await supabase.auth.getSession();
-
-    if (error) {
-      return NextResponse.json({ status: 'Supabase Error', message: error.message }, { status: 500 });
-    }
+    const { data: { session } } = await supabase.auth.getSession();
 
     if (session) {
       return NextResponse.json({ status: 'SUCCESS: Session Found!', user_email: session.user.email });
@@ -54,8 +51,7 @@ export async function GET(request: Request) {
     // If we reach here, it means the .env variables are likely missing on the server.
     return NextResponse.json({ status: 'FAILURE: No Session Found' }, { status: 401 });
 
-  } catch (e) {
-      const err = e as Error;
-      return NextResponse.json({ status: 'CRITICAL ERROR IN ROUTE', message: err.message }, { status: 500 });
+  } catch {
+      return NextResponse.json({ status: 'CRITICAL ERROR IN ROUTE', message: "An unknown error occurred." }, { status: 500 });
   }
 }

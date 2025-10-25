@@ -2,7 +2,7 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Role, CashRegisterSessionStatus } from '@prisma/client';
 
@@ -29,14 +29,26 @@ const ALLOWED_ROLES: Role[] = [Role.CASHIER, Role.ADMIN, Role.SUPER_ADMIN, Role.
  * 4.  Crée un mouvement de stock (InventoryMovement) pour une traçabilité complète.
  */
 export async function POST(request: Request) {
-    const cookieStore = cookies();
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
           cookies: {
-            get(name: string) {
+            async get(name: string) {
+              const cookieStore = await cookies();
               return cookieStore.get(name)?.value
+            },
+            async set(name: string, value: string, options: CookieOptions) {
+              try {
+                const cookieStore = await cookies();
+                cookieStore.set({ name, value, ...options })
+              } catch {}
+            },
+            async remove(name: string, options: CookieOptions) {
+              try {
+                const cookieStore = await cookies();
+                cookieStore.set({ name, value: '', ...options })
+              } catch {}
             },
           },
         }
@@ -163,9 +175,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result, { status: 201 });
 
-  } catch (error) {
-    console.error("Erreur lors du traitement du retour:", error);
-    const errorMessage = error instanceof Error ? error.message : "Impossible de traiter le retour.";
+  } catch (err) {
+    console.error("Erreur lors du traitement du retour:", err);
+    const errorMessage = err instanceof Error ? err.message : "Impossible de traiter le retour.";
     return new NextResponse(JSON.stringify({ error: errorMessage }), { status: 500 });
   }
 }

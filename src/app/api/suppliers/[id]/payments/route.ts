@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { SupplierPaymentStatus, Prisma, Role } from '@prisma/client';
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 // Define the roles that are allowed to view financial data for suppliers.
@@ -19,14 +19,26 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-    const cookieStore = cookies();
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
           cookies: {
-            get(name: string) {
+            async get(name: string) {
+              const cookieStore = await cookies();
               return cookieStore.get(name)?.value
+            },
+            async set(name: string, value: string, options: CookieOptions) {
+              try {
+                const cookieStore = await cookies();
+                cookieStore.set({ name, value, ...options })
+              } catch {}
+            },
+            async remove(name: string, options: CookieOptions) {
+              try {
+                const cookieStore = await cookies();
+                cookieStore.set({ name, value: '', ...options })
+              } catch {}
             },
           },
         }
@@ -80,10 +92,10 @@ export async function GET(
 
     return NextResponse.json(paymentsWithBalance);
 
-  } catch (error) {
+  } catch (err) {
     const idFromContext = context.params ? (await context.params).id : 'inconnu';
-    console.error(`Erreur lors de la récupération des paiements pour le fournisseur ${idFromContext}:`, error);
-    const errorMessage = error instanceof Error ? error.message : "Erreur interne.";
+    console.error(`Erreur lors de la récupération des paiements pour le fournisseur ${idFromContext}:`, err);
+    const errorMessage = err instanceof Error ? err.message : "Erreur interne.";
     return new NextResponse(
       JSON.stringify({ error: 'Impossible de récupérer les paiements', details: errorMessage }),
       { status: 500 }

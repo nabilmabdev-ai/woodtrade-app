@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { SupplierInvoiceStatus, SupplierPaymentStatus } from '@prisma/client';
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Role } from '@prisma/client';
 
@@ -23,14 +23,26 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-    const cookieStore = cookies();
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
           cookies: {
-            get(name: string) {
+            async get(name: string) {
+              const cookieStore = await cookies();
               return cookieStore.get(name)?.value
+            },
+            async set(name: string, value: string, options: CookieOptions) {
+              try {
+                const cookieStore = await cookies();
+                cookieStore.set({ name, value, ...options })
+              } catch {}
+            },
+            async remove(name: string, options: CookieOptions) {
+              try {
+                const cookieStore = await cookies();
+                cookieStore.set({ name, value: '', ...options })
+              } catch {}
             },
           },
         }
@@ -108,9 +120,9 @@ export async function POST(
 
     return NextResponse.json(voidedInvoice, { status: 200 });
 
-  } catch (error) {
-    console.error("Erreur lors de l'annulation de la facture fournisseur:", error);
-    const errorMessage = error instanceof Error ? error.message : "Impossible de traiter la requête.";
+  } catch (err) {
+    console.error("Erreur lors de l'annulation de la facture fournisseur:", err);
+    const errorMessage = err instanceof Error ? err.message : "Impossible de traiter la requête.";
     // Renvoyer une erreur 409 (Conflict) si la logique métier empêche l'action
     if (errorMessage.startsWith("Impossible d'annuler")) {
         return new NextResponse(JSON.stringify({ error: errorMessage }), { status: 409 });

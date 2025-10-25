@@ -13,14 +13,23 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-    const cookieStore = cookies();
+    // CORRECT, ASYNCHRONOUS SUPABASE CLIENT
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
           cookies: {
-            get(name: string) {
+            async get(name: string) {
+              const cookieStore = await cookies();
               return cookieStore.get(name)?.value
+            },
+            async set(name: string, value: string, options) {
+              const cookieStore = await cookies();
+              cookieStore.set({ name, value, ...options });
+            },
+            async remove(name: string, options) {
+              const cookieStore = await cookies();
+              cookieStore.set({ name, value: '', ...options });
             },
           },
         }

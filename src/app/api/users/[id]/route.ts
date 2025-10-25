@@ -1,28 +1,35 @@
 // src/app/api/users/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Role } from '@prisma/client';
 
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const cookieStore = cookies();
   try {
     const { id } = await context.params;
 
     const existing = await prisma.user.findUnique({ where: { id } });
     if (existing) return NextResponse.json(existing);
 
-    // Use the new createServerClient
+    // CORRECT SUPABASE CLIENT FOR ROUTE HANDLERS
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) { return cookieStore.get(name)?.value },
-          // Include set/remove for full functionality
-          set(name: string, value: string, options) { try { cookieStore.set({ name, value, ...options }) } catch (error) {} },
-          remove(name: string, options) { try { cookieStore.set({ name, value: '', ...options }) } catch (error) {} },
+          async get(name: string) {
+            const cookieStore = await cookies();
+            return cookieStore.get(name)?.value;
+          },
+          async set(name: string, value: string, options: CookieOptions) {
+            const cookieStore = await cookies();
+            try { cookieStore.set({ name, value, ...options }) } catch (error) {}
+          },
+          async remove(name: string, options: CookieOptions) {
+            const cookieStore = await cookies();
+            try { cookieStore.set({ name, value: '', ...options }) } catch (error) {}
+          },
         },
       }
     );

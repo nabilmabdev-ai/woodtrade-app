@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { CashMovementType } from '@prisma/client';
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 export async function GET(
@@ -41,19 +41,30 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-    const cookieStore = cookies();
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-          cookies: {
-            get(name: string) {
-              return cookieStore.get(name)?.value
+        const supabase = createServerClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          {
+            cookies: {
+              async get(name: string) {
+                const cookieStore = await cookies();
+                return cookieStore.get(name)?.value
+              },
+              async set(name: string, value: string, options: CookieOptions) {
+                try {
+                  const cookieStore = await cookies();
+                  cookieStore.set({ name, value, ...options })
+                } catch {}
+              },
+              async remove(name: string, options: CookieOptions) {
+                try {
+                  const cookieStore = await cookies();
+                  cookieStore.set({ name, value: '', ...options })
+                } catch {}
+              },
             },
-          },
-        }
-    );
-  const { data: { session } } = await supabase.auth.getSession();
+          }
+        );  const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {
     return new NextResponse(JSON.stringify({ error: 'Non autorisé' }), { status: 401 });
@@ -106,10 +117,10 @@ export async function POST(
 
     return NextResponse.json(newMovement, { status: 201 });
 
-  } catch (error) {
+  } catch (err) {
     const sessionIdFromContext = context.params ? (await context.params).id : 'inconnu';
-    console.error(`Erreur lors de la création d'un mouvement pour la session ${sessionIdFromContext}:`, error);
-    const errorMessage = error instanceof Error ? error.message : "Erreur interne.";
+    console.error(`Erreur lors de la création d'un mouvement pour la session ${sessionIdFromContext}:`, err);
+    const errorMessage = err instanceof Error ? err.message : "Erreur interne.";
     return new NextResponse(
       JSON.stringify({ error: "Impossible de créer le mouvement.", details: errorMessage }),
       { status: 500 }

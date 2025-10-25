@@ -3,7 +3,7 @@
 
 import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { Database } from './supabase-types'; // We will create this file next
+import { Database } from './supabase-types'; // <-- CORRECT: Import the shared type
 
 // Singleton Supabase client
 let supabase: SupabaseClient<Database> | undefined;

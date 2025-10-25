@@ -1,17 +1,37 @@
 // src/app/(dashboard)/layout.tsx
 "use client";
 
+import { useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
+import { Role } from '@prisma/client';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // ✅ Correction : suppression de la variable 'user' non utilisée
-  const { loading } = useAuth();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      if (user?.role === Role.CASHIER) {
+        // Register the service worker for cashiers
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => console.log('Service Worker registered with scope:', registration.scope))
+          .catch(error => console.error('Service Worker registration failed:', error));
+      } else {
+        // Unregister the service worker for other roles or when logged out
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          for (const registration of registrations) {
+            registration.unregister();
+            console.log('Service Worker unregistered.');
+          }
+        });
+      }
+    }
+  }, [user]);
 
   if (loading) {
     return (
@@ -26,7 +46,7 @@ export default function DashboardLayout({
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 flex-grow overflow-y-auto">{children}</main>
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import './globals.css'; // <-- ✅ CORRECTION : Importez le CSS global ici
 export const metadata: Metadata = {
   title: 'WoodTrade - ERP',
   description: 'Gestion des opérations pour WoodTrade',
+  manifest: '/manifest.json', // Link to the manifest file
 };
 
 export default function RootLayout({

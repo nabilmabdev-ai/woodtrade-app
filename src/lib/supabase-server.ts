@@ -1,7 +1,7 @@
 // src/lib/supabase-server.ts
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { Database } from './supabase-browser';
+import { Database } from './supabase-types';
 
 export function createSupabaseServerClient() {
   return createServerClient<Database>(
@@ -21,17 +21,13 @@ export function createSupabaseServerClient() {
           try {
             const cookieStore = await cookies();
             cookieStore.set({ name, value, ...options });
-          } catch (error) {
-            // Ignorer l'erreur dans les contextes "read-only" (lecture seule).
-          }
+          } catch {}
         },
         async remove(name: string, options: CookieOptions) {
           try {
             const cookieStore = await cookies();
             cookieStore.set({ name, value: '', ...options });
-          } catch (error) {
-            // Ignorer l'erreur dans les contextes "read-only".
-          }
+          } catch {}
         },
       },
     }

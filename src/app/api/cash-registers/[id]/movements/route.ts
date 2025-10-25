@@ -125,8 +125,14 @@ export async function POST(
 
     const newMovement = await prisma.cashMovement.create({
       data: {
-        sessionId: cashRegister.type === CashRegisterType.SALES ? sessionId : undefined,
-        cashRegisterId: cashRegister.type === CashRegisterType.EXPENSE ? cashRegisterId : undefined,
+        // If a sessionId is provided (i.e., for a SALES register with the box checked), use it.
+        sessionId: sessionId,
+        
+        // If NO sessionId is provided, then the movement MUST be linked directly to the cash register.
+        // This covers both EXPENSE registers (which never have a session) AND
+        // SALES registers where the movement is intentionally not part of the session.
+        cashRegisterId: !sessionId ? cashRegisterId : undefined,
+
         userId: user.id,
         amount: finalAmount,
         type,

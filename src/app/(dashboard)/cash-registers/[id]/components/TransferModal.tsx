@@ -75,10 +75,10 @@ export default function TransferModal({ isOpen, onClose, onSubmit, isSubmitting,
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" aria-modal="true" role="dialog">
       <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-lg">
-        <h2 className="text-2xl font-bold mb-6">Transfer Funds</h2>
+        <h2 className="text-2xl font-bold mb-6">Transférer des Fonds</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="destination" className="block text-sm font-medium text-gray-700">Destination Register *</label>
+            <label htmlFor="destination" className="block text-sm font-medium text-gray-700">Caisse de Destination *</label>
             {/* ✅ NEW classes applied for a modern select style */}
             <select
               id="destination"
@@ -90,13 +90,13 @@ export default function TransferModal({ isOpen, onClose, onSubmit, isSubmitting,
               {availableDestinations.length > 0 ? (
                 availableDestinations.map(r => <option key={r.id} value={r.id}>{r.name}</option>)
               ) : (
-                <option disabled>No other registers available for transfer</option>
+                <option disabled>Aucune autre caisse disponible pour le transfert</option>
               )}
             </select>
           </div>
 
           <div>
-            <label htmlFor="amount" className="block text-sm font-medium text-gray-700">Amount to Transfer (MAD) *</label>
+            <label htmlFor="amount" className="block text-sm font-medium text-gray-700">Montant à Transférer (MAD) *</label>
             {/* ✅ NEW classes applied for a modern input style */}
             <input
               id="amount"
@@ -112,7 +112,7 @@ export default function TransferModal({ isOpen, onClose, onSubmit, isSubmitting,
           </div>
 
           <div>
-            <label htmlFor="reason" className="block text-sm font-medium text-gray-700">Reason *</label>
+            <label htmlFor="reason" className="block text-sm font-medium text-gray-700">Raison *</label>
             {/* ✅ NEW classes applied for a modern input style */}
             <input
               id="reason"
@@ -120,7 +120,7 @@ export default function TransferModal({ isOpen, onClose, onSubmit, isSubmitting,
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               required
-              placeholder="e.g., Balancing registers, end of day..."
+              placeholder="Ex: Équilibrage des caisses, fin de journée..."
               className="mt-1 block w-full px-4 py-3 rounded-xl ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-300 placeholder-gray-400 focus:outline-none"
             />
           </div>
@@ -131,14 +131,14 @@ export default function TransferModal({ isOpen, onClose, onSubmit, isSubmitting,
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
             >
-              Cancel
+              Annuler
             </button>
             <button
               type="submit"
               disabled={isSubmitting || availableDestinations.length === 0}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
             >
-              {isSubmitting ? 'Transferring...' : 'Confirm Transfer'}
+              {isSubmitting ? 'Transfert en cours...' : 'Confirmer le Transfert'}
             </button>
           </div>
         </form>

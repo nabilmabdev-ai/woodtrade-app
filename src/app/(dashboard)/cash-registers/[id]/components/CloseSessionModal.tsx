@@ -56,17 +56,17 @@ export default function CloseSessionModal({ isOpen, onClose, onSubmit, isSubmitt
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" aria-modal="true" role="dialog">
       <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-lg">
-        <h2 className="text-2xl font-bold mb-4">Close Session</h2>
+        <h2 className="text-2xl font-bold mb-4">Fermer la Session</h2>
         
         <div className="p-4 mb-4 bg-gray-50 rounded-lg border">
-            <Stat label="Opening Balance" value={`${openingBalance.toLocaleString('fr-FR', {minimumFractionDigits: 2})} MAD`} />
-            <Stat label="System Running Total" value={`${systemRunningTotal.toLocaleString('fr-FR', {minimumFractionDigits: 2})} MAD`} />
+            <Stat label="Fonds de Caisse Initial" value={`${openingBalance.toLocaleString('fr-FR', {minimumFractionDigits: 2})} MAD`} />
+            <Stat label="Total Actuel (Système)" value={`${systemRunningTotal.toLocaleString('fr-FR', {minimumFractionDigits: 2})} MAD`} />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="closingBalance" className="block text-sm font-medium text-gray-700">
-              Counted Closing Balance (MAD) *
+              Montant Compté en Caisse (MAD) *
             </label>
             {/* ✅ NEW classes applied for a modern input style */}
             <input
@@ -86,7 +86,7 @@ export default function CloseSessionModal({ isOpen, onClose, onSubmit, isSubmitt
           {hasDifference && (
             <div className={`p-4 rounded-md ${difference > 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} border`}>
                 <p className={`font-semibold ${difference > 0 ? 'text-green-800' : 'text-red-800'}`}>
-                    Declared closing balance differs by {difference.toLocaleString('fr-FR', {minimumFractionDigits: 2})} MAD.
+                    Le montant déclaré diffère de {difference.toLocaleString('fr-FR', {minimumFractionDigits: 2})} MAD.
                 </p>
                 <div className="mt-3">
                     <div className="relative flex items-start">
@@ -102,9 +102,9 @@ export default function CloseSessionModal({ isOpen, onClose, onSubmit, isSubmitt
                         </div>
                         <div className="ml-3 text-sm">
                             <label htmlFor="createAdjustment" className="font-medium text-gray-700">
-                                Automatically create an adjustment movement
+                                Créer automatiquement un mouvement d'ajustement
                             </label>
-                            <p className="text-gray-500">This will balance the register for the next session.</p>
+                            <p className="text-gray-500">Cela équilibrera la caisse pour la prochaine session.</p>
                         </div>
                     </div>
                 </div>
@@ -117,14 +117,14 @@ export default function CloseSessionModal({ isOpen, onClose, onSubmit, isSubmitt
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
             >
-              Cancel
+              Annuler
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
               className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:bg-gray-400"
             >
-              {isSubmitting ? 'Closing...' : 'Confirm & Close'}
+              {isSubmitting ? 'Fermeture...' : 'Confirmer & Fermer'}
             </button>
           </div>
         </form>

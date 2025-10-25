@@ -274,16 +274,16 @@ export default function ManageRegisterPage() {
   return (
     <>
       <main className="p-8 bg-gray-50 min-h-full">
-        <div className="mb-6"><Link href="/cash-registers" className="text-blue-600 hover:underline">&larr; Back to all registers</Link></div>
+        <div className="mb-6"><Link href="/cash-registers" className="text-blue-600 hover:underline">&larr; Retour à toutes les caisses</Link></div>
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <div className="flex justify-between items-start">
                 <div><h1 className="text-3xl font-bold text-gray-800">{register.name}</h1><div className="mt-2"><TypeBadge type={register.type} /></div></div>
-                <div className="text-right"><p className="text-sm text-gray-500">Current Balance</p><p className="text-4xl font-extrabold text-gray-900">{register.currentBalance.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} MAD</p>{!isExpenseRegister && (<div className="mt-2"><SessionChip session={register.session} /></div>)}</div>
+                <div className="text-right"><p className="text-sm text-gray-500">Solde Actuel</p><p className="text-4xl font-extrabold text-gray-900">{register.currentBalance.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} MAD</p>{!isExpenseRegister && (<div className="mt-2"><SessionChip session={register.session} /></div>)}</div>
             </div>
             <div className="mt-6 pt-4 border-t border-gray-200 flex flex-wrap gap-3">
-                <button onClick={() => setIsAddMovementModalOpen(true)} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700"><Plus className="h-5 w-5" /> Add Movement</button>
-                <button onClick={() => setIsTransferModalOpen(true)} className="flex items-center gap-2 px-4 py-2 font-semibold text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"><ArrowRightLeft className="h-5 w-5" /> Transfer</button>
-                {!isExpenseRegister && (isSessionOpen ? (<button onClick={() => setIsCloseSessionModalOpen(true)} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 ml-auto"><Lock className="h-5 w-5" /> Close Session</button>) : (<button onClick={() => setIsOpenSessionModalOpen(true)} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 ml-auto"><Unlock className="h-5 w-5" /> Open Session</button>))}
+                <button onClick={() => setIsAddMovementModalOpen(true)} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700"><Plus className="h-5 w-5" /> Ajouter Mouvement</button>
+                <button onClick={() => setIsTransferModalOpen(true)} className="flex items-center gap-2 px-4 py-2 font-semibold text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"><ArrowRightLeft className="h-5 w-5" /> Transférer</button>
+                {!isExpenseRegister && (isSessionOpen ? (<button onClick={() => setIsCloseSessionModalOpen(true)} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 ml-auto"><Lock className="h-5 w-5" /> Fermer la Session</button>) : (<button onClick={() => setIsOpenSessionModalOpen(true)} className="flex items-center gap-2 px-4 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 ml-auto"><Unlock className="h-5 w-5" /> Ouvrir la Session</button>))}
             </div>
         </div>
         
@@ -298,22 +298,22 @@ export default function ManageRegisterPage() {
             />
         </div>
         <div className="mt-4 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h2 className="text-xl font-semibold mb-4">Movements</h2>
+            <h2 className="text-xl font-semibold mb-4">Mouvements</h2>
             {loading && movements.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">Loading movements...</p>
+                <p className="text-center text-gray-500 py-8">Chargement des mouvements...</p>
             ) : (
                 <>
                     <ul className="divide-y divide-gray-200">
                         {movements.length > 0 ? (
                             movements.map(m => <MovementItem key={m.id} movement={m} />)
                         ) : (
-                            <p className="text-center text-gray-500 py-8">No movements match the current filters.</p>
+                            <p className="text-center text-gray-500 py-8">Aucun mouvement ne correspond aux filtres actuels.</p>
                         )}
                     </ul>
                     {hasMore && (
                         <div className="mt-6 text-center">
                             <button onClick={() => fetchMovements(false)} disabled={isLoadingMore} className="text-sm font-semibold text-blue-600 hover:underline disabled:text-gray-400">
-                                {isLoadingMore ? 'Loading...' : 'Load more'}
+                                {isLoadingMore ? 'Chargement...' : 'Charger plus'}
                             </button>
                         </div>
                     )}
